@@ -58,8 +58,10 @@
     <abstract>
 
       <t>
-         This document defines a Cryptographic Message Syntax (CMS) protected content type for use with the Resource Public Key Infrastructure (RPKI) to carry a list of prefixes which an Autonomous System (AS) is willing to originate (colloquially also known as 'Reverse ROA').
-         When validated, a PrefixList confirms that the respective ASN holder produced the PrefixList object.
+         This document defines a "RPKI Prefix List", a Cryptographic Message Syntax (CMS) protected content type for use with the Resource Public Key Infrastructure (RPKI) to carry the complete list of prefixes which an Autonomous System (AS) may originate to all or any of its routing peers.
+         The validation of a RPKI Prefix List confirms that the holder of the listed ASN produced the object, and that this
+	 l;ist is a current, accurate and complete describption of address prefixes that may be announced into the
+	 routing system originated by this AS.
       </t>
     </abstract>
   </front>
@@ -68,15 +70,22 @@
     <section anchor="intro">
       <name>Introduction</name>
       <t>
-        This document defines a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type for a general-purpose listing of Autonomous System Numbers (ASNs) and/or pointers to other groupings of ASNs (an 'PrefixList'), for use with the Resource Public Key Infrastructure (RPKI) <xref target="RFC6480"/>.
-        The CMS protected content type is intended to provide for the creation and validation of an RPKI PrefixList, a listing signed by the holder of the private key associated with a particular ASN.
+        This document defines an RPKI Prefix List ". This is a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type for a general-purpose listing of Address Prefixes and an Autonomous System Number. The list of prefixces describes
+	the maximal set of prefixes that the Autonomous SYstem may announce to any of its routing peers. The content is signed
+         by the holder of the RPKI private key associated with the listed ASN.
       </t>
       <t>
-        RPKI PrefixLists are expected to facilitate inter-domain business use cases that depend on an ability to exchange listings of prefixes.
+        Route Sets allow other RPKI-validating remote routing entities to audit the collection of announcements that
+	have the subject ASN as the originating AS. Any prefixes announced by this AS that is not contained in a validated
+	RPKI Prefix List SHOULD (?) / MUST (?) be regarded as invalid and their consequent handl;ing by the local
+	routing entity that performed the audit function is a matter of local policy.
       </t>
       <t>
-        The objective is to offer a RPKI-based successor to plain-text <xref target="RFC2622"/> 'route-set' class objects.
-        The main differences between IRR 'route-set' objects and RPKI PrefixLists is the robust cryptographically verifiable authorization and the notion of being able to 'opt-out' of an listing (a feature that in the IRR context is not possible).
+        The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in
+	Internet Routing Registries (IRRs).
+        The semantics of the route-set and the RPKI Prefix List are equivalent. The difference is that the RPKI signature allows a relying
+	party of be assured of the currency and authenticity of the Prefix List as a complete enumeration of all prefixes that may be
+	announced as originating by this AS if the object can be validated by the RPKI.
       </t>
 
       <section anchor="requirements">
@@ -88,20 +97,20 @@
     </section>
 
     <section anchor="profile">
-      <name>RPKI Signed PrefixList Profile</name>
+      <name>RPKI Signed Prefix List Profile</name>
       <t>
-        PrefixList objects follow the Signed Object Template for the RPKI <xref target="RFC6488"/>.
+        RPKI Prefix List objects follow the Signed Object Template for the RPKI <xref target="RFC6488"/>.
       </t>
 
       <section title="EE Certificates">
         <t>
-          The Certification Authority (CA) <bcp14>MUST</bcp14> only sign one PrefixList or PrefixList Opt-Out Listing with each EE certificate and <bcp14>MUST</bcp14> generate a new key pair for each new PrefixList or PrefixList Opt-Out Listing.
+          The Certification Authority (CA) <bcp14>MUST</bcp14> sign only one PrefixList with each EE certificate and <bcp14>MUST</bcp14> generate a new key pair for each new PrefixList or PrefixList Opt-Out Listing.
           This type of EE certificate is termed a "one-time-use" EE certificate (see <xref target="RFC6487" section="3"/>).
         </t>
       </section>
       <section title="Object Filenames">
         <t>
-          A guideline for naming PrefixList and PrefixList Opt-Out objects is that the file name chosen in the repository be a value derived from the public key of the EE certificate.
+          A guideline for naming PrefixList is that the file name chosen in the repository be a value derived from the public key of the EE certificate.
           One such method of generating a publication name is described in Section 2.1 of <xref target="RFC4387"/>; convert the 160-bit hash of a EE's public key value into a 27-character string using a modified form of Base64 encoding, with an additional modification as proposed in Section 5, table 2, of <xref target="RFC4648"/>.
         </t>
       </section>
@@ -126,7 +135,7 @@
       <section>
         <name>The PrefixList eContent</name>
         <t>
-          The content of an PrefixList indicates a listing of arbitrary ASNs and pointers to other PrefixLists which has been signed with a specific Autonomous System identifier.
+          The content of an PrefixList is a list of IP address prefixes and a single ASN.
           An PrefixList is formally defined as follows:
         </t>
 
@@ -171,9 +180,6 @@
     <section anchor="validation">
       <name>PrefixList Validation</name>
       <t>
-        Before a Relying Party (RP) can expand an PrefixList into a listing of Autonomous System Numbers, the RP <bcp14>MUST</bcp14> first validate all PrefixList Opt-Out Listings to be able to honor opt-Out attestations.
-      </t>
-      <t>
         To validate an PrefixList, the RP <bcp14>MUST</bcp14> perform all the validation checks specified in <xref target="RFC6488"/>.
         In addition, the RP <bcp14>MUST</bcp14> perform the following validation steps:
       </t>
@@ -199,17 +205,22 @@
     <section>
       <name>Operational Considerations</name>
       <t>
-        Multiple PrefixList objects could exist which contain the same asID.
-        In such cases the union of members forms the set of members.
+        Multiple valid PrefixList objects could exist which contain the same asID.
+        In such cases the union of address prefix  members forms the complete set of members.
         It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single PrefixList for a given asID.
+      </t>
+      <t>
+	If an AS holder publishes a PrefixList then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating
+	AS and an address prefix that is not included in the PrefiX List implies that the route has been propagated within the routing system without the permission
+	of the originating AS.
       </t>
     </section>
 
     <section anchor="security">
       <name>Security Considerations</name>
       <t>
-        RPs are hereby warned that the data in an PrefixList is self-asserted.
-        When determining the meaning of any data contained in an PrefixList, RPs <bcp14>MUST NOT</bcp14> make any assumptions about the signer beyond the fact that it had sufficient control of the issuing CA to create the object.
+        Relying Parties are warned that the data in an PrefixList is self-asserted by the AS holder. There is no no implied authority from any prefix holder that grants the AS permission
+	to originate a route for any prefixes. Such an authority is seperately conveyed in the RPKI as a ROA.
       </t>
       <t>
         While a one-time-use EE certificate must only be used to generate and sign a single PrefixList object, CAs technically are not restricted from generating and signing multiple different PrefixList objects with a single key pair.
