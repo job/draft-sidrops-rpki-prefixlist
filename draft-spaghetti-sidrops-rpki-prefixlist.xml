@@ -1,0 +1,449 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<!DOCTYPE rfc [
+ <!ENTITY nbsp    "&#160;">
+ <!ENTITY zwsp   "&#8203;">
+ <!ENTITY nbhy   "&#8209;">
+ <!ENTITY wj     "&#8288;">
+]>
+
+<?rfc sortrefs="yes"?>
+<?rfc subcompact="no"?>
+<?rfc symrefs="yes"?>
+<?rfc toc="yes"?>
+<?rfc tocdepth="3"?>
+<?rfc compact="yes"?>
+<?rfc subcompact="no"?>
+
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude"
+     category="std"
+     docName="draft-spaghetti-sidrops-rpki-prefixlist-00"
+     ipr="trust200902"
+     xml:lang="en"
+     sortRefs="true"
+     submissionType="IETF"
+     consensus="true"
+     version="3">
+
+  <front>
+
+    <title abbrev="RPKI PrefixList">
+      A profile for RPKI Signed Lists of Prefixes
+    </title>
+
+    <seriesInfo name="Internet-Draft" value="draft-spaghetti-sidrops-rpki-prefixlist-00"/>
+
+    <author fullname="Job Snijders" initials="J." surname="Snijders">
+      <organization>Fastly</organization>
+      <address>
+        <postal>
+          <street/>
+          <code/>
+          <city>Amsterdam</city>
+          <country>Netherlands</country>
+        </postal>
+        <email>job@fastly.com</email>
+      </address>
+    </author>
+
+    <date />
+
+    <area>ops</area>
+    <workgroup>sidrops</workgroup>
+
+    <keyword>security</keyword>
+    <keyword>cryptography</keyword>
+    <keyword>X.509</keyword>
+    
+    <abstract>
+
+      <t>
+         This document defines a Cryptographic Message Syntax (CMS) protected content type for use with the Resource Public Key Infrastructure (RPKI) to carry a list of prefixes which an Autonomous System (AS) is willing to originate (colloquially also known as 'Reverse ROA').
+         When validated, a PrefixList confirms that the respective ASN holder produced the PrefixList object.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section anchor="intro">
+      <name>Introduction</name>
+      <t>
+        This document defines a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type for a general-purpose listing of Autonomous System Numbers (ASNs) and/or pointers to other groupings of ASNs (an 'PrefixList'), for use with the Resource Public Key Infrastructure (RPKI) <xref target="RFC6480"/>.
+        The CMS protected content type is intended to provide for the creation and validation of an RPKI PrefixList, a listing signed by the holder of the private key associated with a particular ASN.
+      </t>
+      <t>
+        RPKI PrefixLists are expected to facilitate inter-domain business use cases that depend on an ability to exchange listings of prefixes.
+      </t>
+      <t>
+        The objective is to offer a RPKI-based successor to plain-text <xref target="RFC2622"/> 'route-set' class objects.
+        The main differences between IRR 'route-set' objects and RPKI PrefixLists is the robust cryptographically verifiable authorization and the notion of being able to 'opt-out' of an listing (a feature that in the IRR context is not possible).
+      </t>
+
+      <section anchor="requirements">
+        <name>Requirements Language</name>
+        <t>
+          The key words "<bcp14>MUST</bcp14>", "<bcp14>MUST NOT</bcp14>", "<bcp14>REQUIRED</bcp14>", "<bcp14>SHALL</bcp14>", "<bcp14>SHALL NOT</bcp14>", "<bcp14>SHOULD</bcp14>", "<bcp14>SHOULD NOT</bcp14>", "<bcp14>RECOMMENDED</bcp14>", "<bcp14>NOT RECOMMENDED</bcp14>", "<bcp14>MAY</bcp14>", and "<bcp14>OPTIONAL</bcp14>" in this document are to be interpreted as described in BCP&nbsp;14 <xref target="RFC2119"/> <xref target="RFC8174"/> when, and only when, they appear in all capitals, as shown here.
+        </t>
+      </section>
+    </section>
+
+    <section anchor="profile">
+      <name>RPKI Signed PrefixList Profile</name>
+      <t>
+        PrefixList objects follow the Signed Object Template for the RPKI <xref target="RFC6488"/>.
+      </t>
+
+      <section title="EE Certificates">
+        <t>
+          The Certification Authority (CA) <bcp14>MUST</bcp14> only sign one PrefixList or PrefixList Opt-Out Listing with each EE certificate and <bcp14>MUST</bcp14> generate a new key pair for each new PrefixList or PrefixList Opt-Out Listing.
+          This type of EE certificate is termed a "one-time-use" EE certificate (see <xref target="RFC6487" section="3"/>).
+        </t>
+      </section>
+      <section title="Object Filenames">
+        <t>
+          A guideline for naming PrefixList and PrefixList Opt-Out objects is that the file name chosen in the repository be a value derived from the public key of the EE certificate.
+          One such method of generating a publication name is described in Section 2.1 of <xref target="RFC4387"/>; convert the 160-bit hash of a EE's public key value into a 27-character string using a modified form of Base64 encoding, with an additional modification as proposed in Section 5, table 2, of <xref target="RFC4648"/>.
+        </t>
+      </section>
+    </section>
+
+    <section anchor="content">
+      <name>eContentType</name>
+      <section>
+        <name>The PrefixList eContentType</name>
+        <t>
+          The eContentType for an PrefixList is defined as id-ct-rpkiSignedPrefixList, with Object Identifier (OID) 1.2.840.113549.1.9.16.1.TBD.
+        </t>
+        <t>
+          This OID <bcp14>MUST</bcp14> appear within both the eContentType in the encapContentInfo object and the ContentType signed attribute in the signerInfo object (see <xref target="RFC6488"/>).
+        </t>
+      </section>
+    </section>
+ 
+     <section anchor="econtent">
+      <name>eContent</name>
+
+      <section>
+        <name>The PrefixList eContent</name>
+        <t>
+          The content of an PrefixList indicates a listing of arbitrary ASNs and pointers to other PrefixLists which has been signed with a specific Autonomous System identifier.
+          An PrefixList is formally defined as follows:
+        </t>
+
+        <sourcecode type="asn.1" src="RpkiSignedPrefixList-2023.asn"/>
+
+        <section>
+          <name>Version</name>
+          <t>
+            The version number of the RpkiSignedPrefixList <bcp14>MUST</bcp14> be 0.
+          </t>
+        </section>
+
+        <section>
+          <name>asID</name>
+          <t>
+            The Autonomous System Number contained here <bcp14>MUST</bcp14> be a subset of the set of resources listed by the EE certificate carried in the CMS certificates field.
+          </t>
+        </section>
+
+        <section>
+          <name>prefixlist</name>
+          <t>
+            This field contains a SEQUENCE of IPAddressFamily.
+            The IPAddressFamily elements <bcp14>MUST</bcp14> be ordered in ascending order by numeric value of the addressFamily field.
+          </t>
+          <section>
+            <name>Element IPAddressFamily</name>
+            <t>
+              This field contains a SEQUENCE which contains one instance of addressFamily and a SEQUENCE of IPAddress.
+            </t>
+          </section>
+          <section>
+            <name>Element addressFamily</name>
+            <t>
+              This field contains a OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
+            </t>
+          </section>
+        </section>
+      </section>
+    </section>
+
+    <section anchor="validation">
+      <name>PrefixList Validation</name>
+      <t>
+        Before a Relying Party (RP) can expand an PrefixList into a listing of Autonomous System Numbers, the RP <bcp14>MUST</bcp14> first validate all PrefixList Opt-Out Listings to be able to honor opt-Out attestations.
+      </t>
+      <t>
+        To validate an PrefixList, the RP <bcp14>MUST</bcp14> perform all the validation checks specified in <xref target="RFC6488"/>.
+        In addition, the RP <bcp14>MUST</bcp14> perform the following validation steps:
+      </t>
+      <ol>
+        <li>
+          The contents of the CMS eContent field <bcp14>MUST</bcp14> conform to all of the constraints described in <xref target="econtent"/>.
+        </li>
+        <li>
+          The Autonomous System Identifier Delegation extension <xref target="RFC3779"/> <bcp14>MUST</bcp14> be present in the EE certificate contained in the CMS certificates field.
+        </li>
+        <li>
+          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of those present in the certificate extension.
+        </li>
+        <li>
+          The Autonomous System Identifier Delegation extension <bcp14>MUST NOT</bcp14> contain "inherit" elements.
+        </li>
+        <li>
+          The IP Address Delegation Extension <xref target="RFC3779"/> is not used in PrefixList, and <bcp14>MUST NOT</bcp14> be present in the EE certificate.
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <name>Operational Considerations</name>
+      <t>
+        Multiple PrefixList objects could exist which contain the same asID.
+        In such cases the union of members forms the set of members.
+        It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single PrefixList for a given asID.
+      </t>
+    </section>
+
+    <section anchor="security">
+      <name>Security Considerations</name>
+      <t>
+        RPs are hereby warned that the data in an PrefixList is self-asserted.
+        When determining the meaning of any data contained in an PrefixList, RPs <bcp14>MUST NOT</bcp14> make any assumptions about the signer beyond the fact that it had sufficient control of the issuing CA to create the object.
+      </t>
+      <t>
+        While a one-time-use EE certificate must only be used to generate and sign a single PrefixList object, CAs technically are not restricted from generating and signing multiple different PrefixList objects with a single key pair.
+        Any PrefixList objects sharing the same EE certificate cannot be revoked individually.
+      </t>
+    </section>
+
+    <section anchor="iana">
+      <name>IANA Considerations</name>
+
+      <section>
+        <name>SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)</name>
+        <t>
+          IANA is requested to allocated the following in the "SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)" registry:
+        </t>
+
+        <table anchor="cms-content-type" align="center">
+          <name></name>
+          <thead>
+            <tr>
+              <th rowspan="1" colspan="1">Decimal</th>
+              <th rowspan="1" colspan="1">Description</th>
+              <th rowspan="1" colspan="1">References</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr>
+        	<td>TBD</td>
+        	<td>id-ct-rpkiSignedPrefixList</td>
+        	<td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+              </tr>
+            </tbody>
+        </table>
+      </section>
+
+      <section>
+        <name>RPKI Signed Objects</name>
+        <t>
+          IANA is requested to register two OIDs in the "RPKI Signed Objects" registry <xref target="RFC6488"/> as follows:
+        </t>
+
+        <table anchor="rpki-signed-prefixlist" align="center">
+          <name></name>
+          <thead>
+            <tr>
+              <th rowspan="1" colspan="1">Name</th>
+              <th rowspan="1" colspan="1">OID</th>
+              <th rowspan="1" colspan="1">Reference</th>
+            </tr>
+        </thead>
+          <tbody>
+            <tr>
+              <td>Signed PrefixList</td>
+              <td>1.2.840.113549.1.9.16.1.TBD</td>
+              <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <name>RPKI Repository Name Schemes</name>
+        <t>
+          IANA is requested to add the Signed PrefixList file extension to the "RPKI Repository Name Schemes" registry <xref target="RFC6481"/> as follows:
+        </t>
+
+        <table anchor="rpki-repository-name-schemes" align="center">
+          <name></name>
+          <thead>
+            <tr>
+              <th rowspan="1" colspan="1">Filename Extension</th>
+              <th rowspan="1" colspan="1">RPKI Object</th>
+              <th rowspan="1" colspan="1">Reference</th>
+            </tr>
+        </thead>
+          <tbody>
+            <tr>
+              <td>.pfx</td>
+              <td>Signed PrefixList</td>
+              <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <name>SMI Security for S/MIME Module Identifier (1.2.840.113549.1.9.16.0)</name>
+        <t>
+          IANA is requested to allocate the following in the "SMI Security for S/MIME Module Identifier (1.2.840.113549.1.9.16.0)" registry:
+        </t>
+
+        <table anchor="smi-security-identifier" align="center">
+          <name></name>
+          <thead>
+            <tr>
+              <th rowspan="1" colspan="1">Decimal</th>
+              <th rowspan="1" colspan="1">Description</th>
+              <th rowspan="1" colspan="1">References</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TBD</td>
+              <td>id-mod-rpkiSignedPrefixList-2023</td>
+              <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <name>Media Types</name>
+        <t>
+          IANA is requested to register the media type "application/rpki-prefixlist" in the "Media Types" registry as follows:
+        </t>
+        <section>
+        <name>PrefixList Media Type</name>
+        <dl spacing="compact">
+           <dt>Type name:</dt><dd>application</dd>
+           <dt>Subtype name:</dt><dd>rpki-prefixlist</dd>
+           <dt>Required parameters:</dt><dd>N/A</dd>
+           <dt>Optional parameters:</dt><dd>N/A</dd>
+           <dt>Encoding considerations:</dt><dd>binary</dd>
+           <dt>Security considerations:</dt><dd>Carries an RPKI Signed PrefixList. This media type contains no active content. See <xref target="validation"/> of draft-spaghetti-sidrops-rpki-prefixlist for further information.</dd>
+           <dt>Interoperability considerations:</dt><dd>N/A</dd>
+           <dt>Published specification:</dt><dd>draft-spaghetti-sidrops-rpki-prefixlist</dd>
+           <dt>Applications that use this media type:</dt><dd>RPKI operators</dd>
+           <dt>Fragment identifier considerations:</dt><dd>N/A</dd>
+           <dt>Additional information:</dt>
+           <dd>
+           <dl spacing="compact">
+             <dt><br/></dt><dd/>
+             <dt>Content:</dt><dd>This media type is a signed object, as defined in [RFC6488], which contains a payload of a list of checksums as defined in draft-spaghetti-sidrops-rpki-prefixlist.</dd>
+             <dt>Magic number(s):</dt><dd>N/A</dd>
+             <dt>File extension(s):</dt><dd>.pfx</dd>
+             <dt>Macintosh file type code(s):</dt><dd>N/A</dd>
+           </dl>
+           </dd>
+           <dt>Person &amp; email address to contact for further information:</dt><dd>Job Snijders (job@fastly.com)</dd>
+           <dt>Intended usage:</dt><dd>COMMON</dd>
+           <dt>Restrictions on usage:</dt><dd>N/A</dd>
+           <dt>Author:</dt><dd>Job Snijders (job@fastly.com)</dd>
+           <dt>Change controller:</dt><dd>IETF</dd>
+        </dl>
+        </section>
+      </section>
+    </section>
+  </middle>
+
+  <back>
+    <references>
+      <name>References</name>
+      <references>
+        <name>Normative References</name>
+
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2622.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.3779.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.5652.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6481.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6487.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6488.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+      </references>
+
+      <references>
+        <name>Informative References</name>
+
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4387.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4648.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6268.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6480.xml"/>
+      </references>
+    </references>
+
+    <section anchor="acknowledgements">
+      <name>Acknowledgements</name>
+      <t>
+        The authors wish to thank
+        <contact fullname="TBD TBD"/>
+        and
+        <contact fullname="TBD TBD"/>
+        for feedback.
+      </t>
+    </section>
+
+    <section>
+      <name>Example payloads</name>
+
+    <section anchor="example-prefixlist">
+      <name>Example PrefixList eContent Payload</name>
+      <t>
+        Below an example of a DER encoded PrefixList eContent is provided with annotation following the '#' character.
+      </t>
+      <artwork>
+<![CDATA[
+TBD ...
+
+$ echo 302c0202407d160941532d414d415a4f4e01010030180202407d30120202\
+407d160c41532d435553544f4d455253 \
+| xxd -r -ps \
+| openssl asn1parse -inform DER -i
+
+....
+]]>
+      </artwork>
+
+    </section>
+
+    </section>
+
+    <section removeInRFC="true">
+      <name>Implementation status</name>
+      <t>
+        This section records the status of known implementations of the protocol defined by this specification at the time of posting of this Internet-Draft, and is based on a proposal described in RFC 7942.
+        The description of implementations in this section is intended to assist the IETF in its decision processes in progressing drafts to RFCs.
+        Please note that the listing of any individual implementation here does not imply endorsement by the IETF.
+        Furthermore, no effort has been spent to verify the information presented here that was supplied by IETF contributors.
+        This is not intended as, and must not be construed to be, a catalog of available implementations or their features.
+        Readers are advised to note that other implementations may exist.
+      </t>
+      <t>
+        According to RFC 7942, "this will allow reviewers and working groups to assign due consideration to documents that have the benefit of running code, which may serve as evidence of valuable experimentation and feedback that have made the implemented protocols more mature.
+        It is up to the individual working groups to use this information as they see fit".
+      </t>
+
+      <ul>
+        <li>
+          Example .pfx files were created by Job Snijders with the use of asn1c and OpenSSL.
+        </li>
+      </ul>
+
+    </section>
+
+  </back>
+
+</rfc>
