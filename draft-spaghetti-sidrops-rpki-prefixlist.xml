@@ -59,9 +59,7 @@
 
       <t>
          This document defines a "RPKI Prefix List", a Cryptographic Message Syntax (CMS) protected content type for use with the Resource Public Key Infrastructure (RPKI) to carry the complete list of prefixes which an Autonomous System (AS) may originate to all or any of its routing peers.
-         The validation of a RPKI Prefix List confirms that the holder of the listed ASN produced the object, and that this
-	 l;ist is a current, accurate and complete describption of address prefixes that may be announced into the
-	 routing system originated by this AS.
+         The validation of a RPKI Prefix List confirms that the holder of the listed ASN produced the object, and that this list is a current, accurate and complete description of address prefixes that may be announced into the routing system originated by this AS.
       </t>
     </abstract>
   </front>
@@ -70,22 +68,18 @@
     <section anchor="intro">
       <name>Introduction</name>
       <t>
-        This document defines an RPKI Prefix List ". This is a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type for a general-purpose listing of Address Prefixes and an Autonomous System Number. The list of prefixces describes
-	the maximal set of prefixes that the Autonomous SYstem may announce to any of its routing peers. The content is signed
-         by the holder of the RPKI private key associated with the listed ASN.
+        This document defines an "RPKI Prefix List", a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type to carry a list of IP prefixes and an Autonomous System Number.
+        The list of prefixes describes the maximal set of prefixes that the Autonomous System MAY announce to any of its routing peers.
+        The content is signed by the holder of the RPKI private key associated with the listed ASN.
       </t>
       <t>
-        Route Sets allow other RPKI-validating remote routing entities to audit the collection of announcements that
-	have the subject ASN as the originating AS. Any prefixes announced by this AS that is not contained in a validated
-	RPKI Prefix List SHOULD (?) / MUST (?) be regarded as invalid and their consequent handl;ing by the local
-	routing entity that performed the audit function is a matter of local policy.
+        RPKI Prefix Lists allow other RPKI-validating remote routing entities to audit the collection of announcements that have the subject ASN as the originating AS.
+        Any prefixes originated by this AS not contained in a validated RPKI Prefix List SHOULD be regarded as invalid, but ultimately their consequent handling by the local routing entity that performed the audit function is a matter of local policy.
       </t>
       <t>
-        The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in
-	Internet Routing Registries (IRRs).
-        The semantics of the route-set and the RPKI Prefix List are equivalent. The difference is that the RPKI signature allows a relying
-	party of be assured of the currency and authenticity of the Prefix List as a complete enumeration of all prefixes that may be
-	announced as originating by this AS if the object can be validated by the RPKI.
+        The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in Internet Routing Registries (IRRs).
+        The semantics of the route-set and the RPKI Prefix List are similair.
+        The difference is that the RPKI signature allows a relying party of be assured of the currency and authenticity of the Prefix List as a complete enumeration of all prefixes that may be announced as originating by this AS if the object can be validated by the RPKI.
       </t>
 
       <section anchor="requirements">
