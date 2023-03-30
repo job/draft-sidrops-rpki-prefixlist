@@ -46,6 +46,19 @@
       </address>
     </author>
 
+    <author fullname="Geoff Huston" initials="G." surname="Huston">
+      <organization>APNIC</organization>
+      <address>
+        <postal>
+          <street>6 Cordelia St</street>
+          <code>QLD 4101</code>
+          <city>South Brisbane</city>
+          <country>Australia</country>
+        </postal>
+        <email>gih@apnic.net</email>
+      </address>
+    </author>
+
     <date />
 
     <area>ops</area>
@@ -54,7 +67,7 @@
     <keyword>security</keyword>
     <keyword>cryptography</keyword>
     <keyword>X.509</keyword>
-    
+
     <abstract>
 
       <t>
@@ -122,7 +135,7 @@
         </t>
       </section>
     </section>
- 
+
      <section anchor="econtent">
       <name>eContent</name>
 
@@ -145,7 +158,7 @@
         <section>
           <name>asID</name>
           <t>
-            The Autonomous System Number contained here <bcp14>MUST</bcp14> be a subset of the set of resources listed by the EE certificate carried in the CMS certificates field.
+            The Autonomous System Number contained here <bcp14>MUST</bcp14> be a contained within the set of AS Identifier resources listed by the EE certificate carried in the CMS certificates field.
           </t>
         </section>
 
@@ -153,19 +166,28 @@
           <name>prefixlist</name>
           <t>
             This field contains a SEQUENCE of IPAddressFamily.
+            There MUST be only one instance of IPAddressFamily per unique AFI.
+            The IPAddressFamily structure MUST NOT appear more than twice.
             The IPAddressFamily elements <bcp14>MUST</bcp14> be ordered in ascending order by numeric value of the addressFamily field.
           </t>
           <section>
             <name>Element IPAddressFamily</name>
             <t>
-              This field contains a SEQUENCE which contains one instance of addressFamily and a SEQUENCE of IPAddress.
+              This field contains a SEQUENCE which contains one instance of addressFamily and one instance of addresses.
             </t>
-          </section>
-          <section>
-            <name>Element addressFamily</name>
-            <t>
-              This field contains a OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
-            </t>
+            <section>
+              <name>addressFamily</name>
+              <t>
+                This field contains a OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
+              </t>
+            </section>
+            <section>
+              <name>addresses</name>
+              <t>
+                This field contains a SEQUENCE of elements of type IPAddress.
+                The IPAddress type is a BIT STRING, see Section 2.2.3.8 of <xref target="RFC3779" /> for more information.
+              </t>
+            </section>
           </section>
         </section>
       </section>
@@ -185,7 +207,7 @@
           The Autonomous System Identifier Delegation extension <xref target="RFC3779"/> <bcp14>MUST</bcp14> be present in the EE certificate contained in the CMS certificates field.
         </li>
         <li>
-          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of those present in the certificate extension.
+          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of the AS Indentifiers present in the certificate extension.
         </li>
         <li>
           The Autonomous System Identifier Delegation extension <bcp14>MUST NOT</bcp14> contain "inherit" elements.
@@ -200,21 +222,20 @@
       <name>Operational Considerations</name>
       <t>
         Multiple valid PrefixList objects could exist which contain the same asID.
-        In such cases the union of address prefix  members forms the complete set of members.
+        In such cases the union of address prefix members forms the complete set of members.
         It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single PrefixList for a given asID.
       </t>
       <t>
-	If an AS holder publishes a PrefixList then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating
-	AS and an address prefix that is not included in the PrefiX List implies that the route has been propagated within the routing system without the permission
-	of the originating AS.
+	If an AS holder publishes a PrefixList then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
       </t>
     </section>
 
     <section anchor="security">
       <name>Security Considerations</name>
       <t>
-        Relying Parties are warned that the data in an PrefixList is self-asserted by the AS holder. There is no no implied authority from any prefix holder that grants the AS permission
-	to originate a route for any prefixes. Such an authority is seperately conveyed in the RPKI as a ROA.
+        Relying Parties are warned that the data in an PrefixList is self-asserted by the AS holder.
+        There is no implied authority from any IP prefix holder that grants the AS permission to originate a route for any prefixes.
+        Such an authority is separately conveyed in the RPKI as a ROA.
       </t>
       <t>
         While a one-time-use EE certificate must only be used to generate and sign a single PrefixList object, CAs technically are not restricted from generating and signing multiple different PrefixList objects with a single key pair.
@@ -410,14 +431,29 @@
       </t>
       <artwork>
 <![CDATA[
-TBD ...
-
-$ echo 302c0202407d160941532d414d415a4f4e01010030180202407d30120202\
-407d160c41532d435553544f4d455253 \
-| xxd -r -ps \
-| openssl asn1parse -inform DER -i
-
-....
+$ cat << EOF | xxd -r -ps | openssl asn1parse -inform DER -i -dump
+30819902023cca308192306d04020001306703040043ddf5030400a5fee1
+030506a5feff00030400c093a8030400c22047030400c63a03030401cc02
+1e030400d11800030400d11801030407d11880030404d11810030400d118
+03030405d11820030402d11804030406d11840030403d11808030400d118
+08302104020002301b03070120010418144e0307002001067c208c030700
+200107fbfd04
+EOF
+    0:d=0  hl=3 l= 153 cons: SEQUENCE
+    3:d=1  hl=2 l=   2 prim:  INTEGER        :3CCA # AS 15562
+    7:d=1  hl=3 l= 146 cons:  SEQUENCE
+   10:d=2  hl=2 l= 109 cons:   SEQUENCE
+   12:d=3  hl=2 l=   2 prim:    OCTET STRING
+      0000 - 00 01                              .. # IPv4 AFI
+   16:d=3  hl=2 l= 103 cons:    SEQUENCE
+   18:d=4  hl=2 l=   4 prim:     BIT STRING
+      0000 - 00 43 dd f5                      .C.. # 67.221.245.0/24
+   24:d=4  hl=2 l=   4 prim:     BIT STRING
+      0000 - 00 a5 fe e1                      .... # 165.254.225.0/24
+   30:d=4  hl=2 l=   5 prim:     BIT STRING
+      0000 - 06 a5 fe ff                      .... # 165.254.255.0/26
+      0005 - <SPACES/NULS>
+...
 ]]>
       </artwork>
 
