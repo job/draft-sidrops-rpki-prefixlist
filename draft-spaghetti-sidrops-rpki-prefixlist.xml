@@ -226,7 +226,11 @@
         It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single PrefixList for a given asID.
       </t>
       <t>
-	If an AS holder publishes a PrefixList then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
+	If an AS holder publishes a PrefixList, then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
+      </t>
+      <t>
+        The construction of an 'allowlist' for a given EBGP session using RPKI PrefixList(s) compliments best practises <xref target="RFC7454"/> and rejecting RPKI-invalid BGP route announcements <xref target="RFC6811"/>.
+        In other words, if a given BGP route is covered by a RPKI PrefixList, but also is "invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement.
       </t>
     </section>
 
@@ -407,6 +411,8 @@
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4387.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4648.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6268.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7454.xml"/>
       </references>
     </references>
 
@@ -432,12 +438,12 @@
       <artwork>
 <![CDATA[
 $ cat << EOF | xxd -r -ps | openssl asn1parse -inform DER -i -dump
-30819902023cca308192306d04020001306703040043ddf5030400a5fee1
+3081a202023cca30819b306d04020001306703040043ddf5030400a5fee1
 030506a5feff00030400c093a8030400c22047030400c63a03030401cc02
 1e030400d11800030400d11801030407d11880030404d11810030400d118
 03030405d11820030402d11804030406d11840030403d11808030400d118
-08302104020002301b03070120010418144e0307002001067c208c030700
-200107fbfd04
+08302a04020002302403070120010418144e0307002001067c208c030700
+200107fbfd040307002607fae00245
 EOF
     0:d=0  hl=3 l= 153 cons: SEQUENCE
     3:d=1  hl=2 l=   2 prim:  INTEGER        :3CCA # AS 15562
@@ -453,7 +459,19 @@ EOF
    30:d=4  hl=2 l=   5 prim:     BIT STRING
       0000 - 06 a5 fe ff                      .... # 165.254.255.0/26
       0005 - <SPACES/NULS>
-...
+... snip ...
+  121:d=2  hl=2 l=  33 cons:   SEQUENCE
+  123:d=3  hl=2 l=   2 prim:    OCTET STRING
+      0000 - 00 02                            ..
+  127:d=3  hl=2 l=  27 cons:    SEQUENCE
+  129:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 01 20 01 04 18 14 4e             . ....N # 2001:418:144e::/47
+  138:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 20 01 06 7c 20 8c             . ..| . # 2001:67c:208c::/48
+  147:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 20 01 07 fb fd 04             . ..... # 2001:7fb:fd04::/48
+  156:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 26 07 fa e0 02 45             .&....E # 2607:fae0:245::/48
 ]]>
       </artwork>
 
