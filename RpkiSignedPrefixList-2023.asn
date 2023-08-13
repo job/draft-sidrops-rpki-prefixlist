@@ -21,21 +21,14 @@ id-ct-rpkiSignedPrefixList OBJECT IDENTIFIER ::=
     pkcs-9(9) id-smime(16) id-ct(1) TBD }
 
 RpkiSignedPrefixList ::= SEQUENCE {
-  version [0]      INTEGER DEFAULT 0,
-  asID             ASID,
-  prefixlist       SEQUENCE (SIZE(1..2)) OF IPAddressFamily }
-
-IPAddressFamily ::= SEQUENCE {
-  -- Note: addressFamily must be '0001'H (IPv4) or '0002'H (IPv6) --
-  addressFamily    OCTET STRING (SIZE(2)),
-  addresses        SEQUENCE (SIZE(1..MAX)) OF IPAddress
-}
+  version [0]        INTEGER DEFAULT 0,
+  asID               ASID,
+  prefixlistIPv4 [1] SEQUENCE OF IPv4Address
+  prefixlistIPv6 [2] SEQUENCE OF IPv6Address }
 
 ASID ::= INTEGER (1..4294967295)
 
--- Note: if the ROAIPAddressFamily's addressFamily is IPv4, the  --
--- IPAddress' size cannot exceed 32; conversely if addressFamily --
--- is IPv6, size can't exceed 128.                               --
-IPAddress ::= BIT STRING (SIZE(0..128))
+IPv4Address ::= BIT STRING (SIZE(0..32))
+IPv6Address ::= BIT STRING (SIZE(0..128))
 
 END
