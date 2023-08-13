@@ -23,8 +23,10 @@ id-ct-rpkiSignedPrefixList OBJECT IDENTIFIER ::=
 RpkiSignedPrefixList ::= SEQUENCE {
   version [0]        INTEGER DEFAULT 0,
   asID               ASID,
-  prefixlistIPv4 [1] SEQUENCE OF IPv4Address,
-  prefixlistIPv6 [2] SEQUENCE OF IPv6Address }
+  prefixlistIPv4 [1] SEQUENCE OF IPv4Address OPTIONAL,
+  prefixlistIPv6 [2] SEQUENCE OF IPv6Address OPTIONAL }
+  ( WITH COMPONENTS { ..., prefixlistIPv4 PRESENT} |
+    WITH COMPONENTS { ..., prefixlistIPv6 PRESENT } )
 
 ASID ::= INTEGER (1..4294967295)
 
