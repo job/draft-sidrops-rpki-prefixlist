@@ -163,17 +163,15 @@
         </section>
 
         <section>
-          <name>prefixlist</name>
+          <name>prefixList</name>
           <t>
-            This field contains a SEQUENCE of IPAddressFamily.
-            There MUST be only one instance of IPAddressFamily per unique AFI.
-            The IPAddressFamily structure MUST NOT appear more than twice.
-            The IPAddressFamily elements <bcp14>MUST</bcp14> be ordered in ascending order by numeric value of the addressFamily field.
+            This field contains a SEQUENCE of AddressFamilyIPAddress.
+            The AddressFamilyIPAddress elements <bcp14>MUST</bcp14> be ordered in ascending order: first by numeric value of the addressFamily field, then by value of the prefix field.
           </t>
           <section>
-            <name>Element IPAddressFamily</name>
+            <name>Element AddressFamilyIPAddress</name>
             <t>
-              This field contains a SEQUENCE which contains one instance of addressFamily and one instance of addresses.
+              This field contains a SEQUENCE which contains one instance of addressFamily and one instance of prefix.
             </t>
             <section>
               <name>addressFamily</name>
@@ -182,10 +180,10 @@
               </t>
             </section>
             <section>
-              <name>addresses</name>
+              <name>prefix</name>
               <t>
-                This field contains a SEQUENCE of elements of type IPAddress.
-                The IPAddress type is a BIT STRING, see Section 2.2.3.8 of <xref target="RFC3779" /> for more information.
+                This field contains a BIT STRING, its length bounded through the addressFamily field.
+                The type is a BIT STRING, see Section 2.2.3.8 of <xref target="RFC3779" /> for more information.
               </t>
             </section>
           </section>
