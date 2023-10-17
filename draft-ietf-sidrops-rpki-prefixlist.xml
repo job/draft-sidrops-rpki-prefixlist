@@ -17,7 +17,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
      category="std"
-     docName="draft-spaghetti-sidrops-rpki-prefixlist-01"
+     docName="draft-ietf-sidrops-rpki-prefixlist-00"
      ipr="trust200902"
      xml:lang="en"
      sortRefs="true"
@@ -31,7 +31,7 @@
       A profile for RPKI Signed Lists of Prefixes
     </title>
 
-    <seriesInfo name="Internet-Draft" value="draft-spaghetti-sidrops-rpki-prefixlist-00"/>
+    <seriesInfo name="Internet-Draft" value="draft-ietf-sidrops-rpki-prefixlist-00"/>
 
     <author fullname="Job Snijders" initials="J." surname="Snijders">
       <organization>Fastly</organization>
