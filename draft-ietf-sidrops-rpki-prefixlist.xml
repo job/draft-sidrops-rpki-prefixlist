@@ -28,7 +28,7 @@
   <front>
 
     <title abbrev="RPKI PrefixList">
-      A profile for RPKI Signed Lists of Prefixes
+      AA profile for RPKI Signed Lists of Prefixes
     </title>
 
     <seriesInfo name="Internet-Draft" value="draft-ietf-sidrops-rpki-prefixlist-00"/>
