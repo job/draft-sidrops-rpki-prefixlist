@@ -17,7 +17,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
      category="std"
-     docName="draft-ietf-sidrops-rpki-prefixlist-00"
+     docName="draft-ietf-sidrops-rpki-prefixlist-01"
      ipr="trust200902"
      xml:lang="en"
      sortRefs="true"
@@ -28,7 +28,7 @@
   <front>
 
     <title abbrev="RPKI PrefixList">
-      AA profile for RPKI Signed Lists of Prefixes
+      A profile for RPKI Signed Lists of Prefixes
     </title>
 
     <seriesInfo name="Internet-Draft" value="draft-ietf-sidrops-rpki-prefixlist-00"/>
@@ -58,6 +58,21 @@
         <email>gih@apnic.net</email>
       </address>
     </author>
+<!--
+    <author fullname="Kotikalapudi Sriram" initials="K." surname="Sriram">
+      <organization abbrev="USA NIST" showOnFrontPage="true">USA National Institute of Standards and Technology</organization>
+      <address>
+        <postal>
+          <street>100 Bureau Drive</street>
+          <city>Gaithersburg</city>
+          <region>MD</region>
+          <code>20899</code>
+          <country>United States of America</country>
+        </postal>
+        <email>ksriram@nist.gov</email>
+      </address>
+    </author>
+-->
 
     <date />
 
@@ -91,8 +106,8 @@
       </t>
       <t>
         The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in Internet Routing Registries (IRRs).
-        The semantics of the route-set and the RPKI Prefix List are similair.
-        The difference is that the RPKI signature allows a relying party of be assured of the currency and authenticity of the Prefix List as a complete enumeration of all prefixes that may be announced as originating by this AS if the object can be validated by the RPKI.
+        The semantics of the route-set and the RPKI Prefix List are similar.
+        The difference is that the RPKI signature allows a relying party (RP) of be assured of the currency and authenticity of the Prefix List as a complete enumeration of all prefixes that may be announced as originating by this AS if the object can be validated by the RPKI.
       </t>
 
       <section anchor="requirements">
@@ -145,9 +160,7 @@
           The content of an PrefixList is a list of IP address prefixes and a single ASN.
           An PrefixList is formally defined as follows:
         </t>
-
         <sourcecode type="asn.1" src="RpkiSignedPrefixList-2023.asn"/>
-
         <section>
           <name>Version</name>
           <t>
@@ -176,7 +189,7 @@
             <section>
               <name>addressFamily</name>
               <t>
-                This field contains a OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
+                This field contains an OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
               </t>
             </section>
             <section>
@@ -205,7 +218,7 @@
           The Autonomous System Identifier Delegation extension <xref target="RFC3779"/> <bcp14>MUST</bcp14> be present in the EE certificate contained in the CMS certificates field.
         </li>
         <li>
-          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of the AS Indentifiers present in the certificate extension.
+          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of the AS Identifiers present in the certificate extension.
         </li>
         <li>
           The Autonomous System Identifier Delegation extension <bcp14>MUST NOT</bcp14> contain "inherit" elements.
@@ -215,7 +228,168 @@
         </li>
       </ol>
     </section>
-
+    <section title="Recommendations for Creation of PrefixList Object" anchor="recs">
+    <!-- maxLength Consideration for PrefixList -->
+      <t>
+        An AS SHOULD include all prefixes it originates or intends to originate in its PrefixList. These would include prefixes it owns
+        and the prefixes of BYOIP customers.
+        It is understood that some of these prefixes may have ROA coverage and some may not.
+      </t>
+      <t>
+        There appears to be no need to include a maxLength in the PrefixList object.
+        The reason is as follows.
+        Even if a prefix originated by an AS (whether the prefix is owned by the AS owner or BYOIP)
+        has a ROA with maxLength (greater than the prefix length),
+        typically only the prefix and possibly some of its subprefixes
+        (i.e., subsumed more specific prefixes) are announced in BGP.
+        The owner of the prefix informs the AS operator (typically via a customer interface)
+        about the prefixes and subprefixes (if any) it intends to announce,
+        and only those prefixes/subprefixes SHOULD be included in the PrefixList.
+        Other subprefixes SHOULD NOT be included merely because
+        they are permitted by the ROA or its maxLength.
+        This narrows the attack surface for forged-origin subprefix hijacks
+        which may be otherwise wide due to the ROA maxLength (also see <xref target="reduce"/>).
+      </t>
+    </section>
+    <section title="Route Verification: State Space and Outcomes" anchor="outcomes">
+      <t>
+        The state-space for route verification considering ROV and PrefixList is enumerated in <xref target="state-space"/>.
+        Also, mentioned are the combined results for each state from combining both verifications.
+        A RECOMMENDED route selection policy is also mentioned in the last column of <xref target="state-space"/>.
+        A network operator is free to select a policy that they consider most appropriate.
+        The use of the term "route is ineligible" in this document has the same meaning as in <xref target="RFC4271"/>,
+        i.e., "route is ineligible to be installed in Loc-RIB and will be excluded from the next phase of route selection".
+      </t>
+        <table anchor="state-space" align="center">
+          <name/>
+          <thead>
+            <tr>
+              <th rowspan="1" colspan="1">Index</th>
+              <th rowspan="1" colspan="1">ROV</th>
+              <th rowspan="1" colspan="1">PrefixList Verification</th>
+              <th rowspan="1" colspan="1">Combined Verification</th>
+              <th rowspan="1" colspan="1">Route Selection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Valid</td>
+              <td>Valid</td>
+              <td>Valid</td>
+              <td>Eligible</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Valid</td>
+              <td>Unknown</td>
+              <td>Unknown</td>
+              <td>Eligible</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Valid</td>
+              <td>Invalid</td>
+              <td>Invalid</td>
+              <td>Ineligible</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Unknown</td>
+              <td>Valid</td>
+              <td>Unknown</td>
+              <td>Eligible</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Unknown</td>
+              <td>Unknown</td>
+              <td>Unknown</td>
+              <td>Eligible</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Unknown</td>
+              <td>Invalid</td>
+              <td>Invalid</td>
+              <td>Ineligible</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>Invalid</td>
+              <td>Valid</td>
+              <td>Invalid</td>
+              <td>Ineligible</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>Invalid</td>
+              <td>Unknown</td>
+              <td>Invalid</td>
+              <td>Ineligible</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>Invalid</td>
+              <td>Invalid</td>
+              <td>Invalid</td>
+              <td>Ineligible</td>
+            </tr>
+          </tbody>
+        </table>
+    </section>
+    <section title="Problems Solved by PrefixList" anchor="problems">
+      <t>
+        There are four types of security vulnerabilities in BGP that the PrefixList object helps solve.
+        These are described below.
+      </t>
+      <section title="AS Abuse While Hijacking an ROV-Unknown Prefix" anchor="abuse1">
+        <t>
+        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A
+        as the origin AS and hijacks a third-party prefix not covered by a ROA.
+        The route will be ROV-Unknown and PrefixList Invalid and hence
+        considered ineligible by an RP (see #6 in <xref target="state-space"/>).
+        Thus, AS A protects itself from this form of AS abuse.
+        </t>
+      </section>
+      <section title="AS Abuse Together with a Bogus ROA" anchor="abuse2">
+        <t>
+        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A
+        as the origin AS and announces a prefix for which AS X has an RPKI certificate
+        and a bogus ROA showing AS A as the origin.
+        The route will be ROV-Valid due to the bogus ROA but PrefixList Invalid
+        and hence considered ineligible by an RP (see #3 in <xref target="state-space"/>).
+        Thus, AS A protects itself from this second form of AS abuse as well.
+        </t>
+      </section>
+      <section title="AS Accidentally Strips AS_PATH and Mis-Originates Prefixes" anchor="abuse3">
+        <t>
+        A multihomed AS learns a route from an eBGP neighbor and announces the prefix to
+        another eBGP neighbor as if it is being originated by it (i.e., strips the received
+        AS_PATH and re-originates the prefix). This can be called re-origination or mis-origination
+        (also see Type 5 route leak in <xref target="RFC7908"/>).
+        This attack has been seen to happen in practice due to malfunctioning route optimizers.
+        If the affected prefixes have ROA coverage, then ROV at a subsequent AS would detect this anomaly.
+        However, if the affected prefixes do not have ROA coverage, then these prefixes
+        will be ROV-Unknown and PrefixList Invalid and considered Invalid by an RP
+        (per #6 in <xref target="state-space"/>) provided that the leaking AS has registered a PrefixList.
+        Thus, a leaking AS protects itself in the sense that when the leaks (mis-originations) reach
+        a neighbor AS that is doing PrefixList based verification, they will be detected and blocked
+        from further propagation.
+        </t>
+      </section>
+      <section title="Attack Surface Reduction" anchor="reduce">
+        <t>
+        Often a prefix owner includes more prefixes and/or more more-specific prefixes (using maxLength or otherwise)
+        in their ROA but has no plans to announce some or many of them.
+        Due to this, they tend to create a larger attack surface for forged-origin prefix and/or subprefix hijacks.
+        However, they would notify the operator of the AS serving them for origination purposes
+        about the prefixes they do intend to announce, and the AS operator would include
+        only those prefixes in the AS's PrefixList (see <xref target="do-not-copy-roa"/>).
+        This helps to reduce the attack surface for the forged-origin hijacks (per #3 in <xref target="state-space"/>).
+        </t>
+      </section>
+    </section>
     <section>
       <name>Operational Considerations</name>
       <t>
@@ -224,12 +398,68 @@
         It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single PrefixList for a given asID.
       </t>
       <t>
-	If an AS holder publishes a PrefixList, then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
+        If an AS holder publishes a PrefixList(s), then relying parties SHOULD assume that the list is complete
+        for that originating AS, and the presence of any route with the same AS as the originating AS
+        and an address prefix that is not included in the Prefix List implies that the route has been propagated
+        within the routing system without the permission of the originating AS (see #3 and #6 in <xref target="state-space"/>).
       </t>
       <t>
-        The construction of an 'allowlist' for a given EBGP session using RPKI PrefixList(s) compliments best practises <xref target="RFC7454"/> and rejecting RPKI-invalid BGP route announcements <xref target="RFC6811"/>.
-        In other words, if a given BGP route is covered by a RPKI PrefixList, but also is "invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement.
+        The construction of an 'allowlist' for a given EBGP session using RPKI PrefixList(s) compliments
+        best practices <xref target="RFC7454"/> and rejecting RPKI-invalid BGP route announcements <xref target="RFC6811"/>.
+        In other words, if a given BGP route is covered by a RPKI PrefixList, but also is "Invalid"
+        from a Route Origin Validation perspective, it is RECOMMENDED to consider the route
+        announcement ineligible (see #7 in <xref target="state-space"/>).
       </t>
+      <section title="Considerations when Prefix Owner Splits a Prefix" anchor="split-prefix">
+        <t>
+        A prefix owner with a prefix listed in the PrefixList of an AS may one day decide to split its prefix
+        and announce only a more specific prefix (subsumed under the prefix) from the AS in consideration.
+        This operation needs to be managed gracefully applying the make-before-break principle.
+        When notified of the intent, the AS would update its PrefixList to reflect the change.
+        However, the updated PrefixList would take some time to propagate to the RPs.
+        So, the AS would continue to announce the original prefix as well as the more-specific
+        prefix for the period of time necessary for the propagation of the updated PrefixList.
+        The period of time may be based on a measure of the propagation time such as
+        its anticipated 95th-percentile value.
+        The prefix owner is kept informed of the resulting wait times.
+        </t>
+      </section>
+      <section title="Considerations when Prefix Owner Has a New Prefix" anchor="new-prefix">
+        <t>
+        A prefix owner with a prefix listed in the PrefixList of an AS may one day obtain a new prefix
+        and request the AS operator to announce it.
+        The AS operator would recommend to the prefix owner to create a ROA for the new prefix if not already done.
+        The prefix owner may or may not be RPKI capable.
+        In any case, the AS operator would update its PrefixList to add the new prefix.
+        The prefix owner may expect the new prefix to be announced shortly after making the request.
+        However, the updated PrefixList would take some time to propagate to the RPs.
+        The operator needs to apply the make-before-break principle.
+        The AS operator would delay the announcemnt of the new prefix for a period of time necessary
+        for the propagation of the updated PrefixList.
+        The period of time may be based on a measure of the propagation time such as
+        its anticipated 95th-percentile value.
+        The prefix owner is kept informed of the resulting wait times.
+        </t>
+      </section>
+      <section title="Why are ROA Prefixes not Simply Copied into PrefixList?" anchor="do-not-copy-roa">
+      <t>
+        It may be argued that including everything from any applicable ROA
+        (including the optional maxLength if it exists) in the PrefixList object
+        makes the PrefixList more effective.
+        One may reason that if the prefix owner decides at a future date to announce (from the AS in consideration)
+        more specific prefixes permitted by the ROA, the PrefixList would be ready for it a priori.
+        However, by doing so, the benefit of a pragmatic PrefixList, i.e., reducing
+        the attack surface for potential subprefix hijacks, is lost.
+        So, there is a trade-off and it appears better to opt for not copying prefixes from ROA
+        into the PrefixList and not including an optional maxLength in the PrefixList.
+        Instead, the AS operator SHOULD include in the PrefixList only the prefixes requested by the prefix owners
+        for origination (typically via a customer interface).
+        This helps preserve the benefit of reduced attack surface for forged origin hijacks.
+        If a prefix owner wishes readiness for future instantaneous announcement of some split prefixes
+        under some circumstances, they can include them in their ROA a priori,
+        and simultaneously inform the AS operator to include them in the PrefixList as well.
+      </t>
+      </section>
     </section>
 
     <section anchor="security">
@@ -251,7 +481,7 @@
       <section>
         <name>SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)</name>
         <t>
-          IANA is requested to allocated the following in the "SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)" registry:
+          IANA is requested to allocat the following in the "SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)" registry:
         </t>
 
         <table anchor="cms-content-type" align="center">
@@ -265,9 +495,9 @@
             </thead>
             <tbody>
               <tr>
-        	<td>TBD</td>
-        	<td>id-ct-rpkiSignedPrefixList</td>
-        	<td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+                <td>TBD</td>
+                <td>id-ct-rpkiSignedPrefixList</td>
+                <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
               </tr>
             </tbody>
         </table>
@@ -406,11 +636,13 @@
       <references>
         <name>Informative References</name>
 
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4271.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4387.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4648.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6268.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7454.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7908.xml"/>
       </references>
     </references>
 
@@ -501,3 +733,4 @@ EOF
   </back>
 
 </rfc>
+

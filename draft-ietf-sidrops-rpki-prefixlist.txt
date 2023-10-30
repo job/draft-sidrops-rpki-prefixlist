@@ -1,0 +1,952 @@
+
+
+
+
+sidrops                                                      J. Snijders
+Internet-Draft                                                    Fastly
+Intended status: Standards Track                               G. Huston
+Expires: 2 May 2024                                                APNIC
+                                                         30 October 2023
+
+
+              A profile for RPKI Signed Lists of Prefixes
+                 draft-ietf-sidrops-rpki-prefixlist-01
+
+Abstract
+
+   This document defines a "RPKI Prefix List", a Cryptographic Message
+   Syntax (CMS) protected content type for use with the Resource Public
+   Key Infrastructure (RPKI) to carry the complete list of prefixes
+   which an Autonomous System (AS) may originate to all or any of its
+   routing peers.  The validation of a RPKI Prefix List confirms that
+   the holder of the listed ASN produced the object, and that this list
+   is a current, accurate and complete description of address prefixes
+   that may be announced into the routing system originated by this AS.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 2 May 2024.
+
+Copyright Notice
+
+   Copyright (c) 2023 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 1]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+     1.1.  Requirements Language . . . . . . . . . . . . . . . . . .   3
+   2.  RPKI Signed Prefix List Profile . . . . . . . . . . . . . . .   3
+     2.1.  EE Certificates . . . . . . . . . . . . . . . . . . . . .   4
+     2.2.  Object Filenames  . . . . . . . . . . . . . . . . . . . .   4
+   3.  eContentType  . . . . . . . . . . . . . . . . . . . . . . . .   4
+     3.1.  The PrefixList eContentType . . . . . . . . . . . . . . .   4
+   4.  eContent  . . . . . . . . . . . . . . . . . . . . . . . . . .   4
+     4.1.  The PrefixList eContent . . . . . . . . . . . . . . . . .   4
+       4.1.1.  Version . . . . . . . . . . . . . . . . . . . . . . .   5
+       4.1.2.  asID  . . . . . . . . . . . . . . . . . . . . . . . .   6
+       4.1.3.  prefixList  . . . . . . . . . . . . . . . . . . . . .   6
+   5.  PrefixList Validation . . . . . . . . . . . . . . . . . . . .   6
+   6.  Recommendations for Creation of PrefixList Object . . . . . .   7
+   7.  Route Verification: State Space and Outcomes  . . . . . . . .   7
+   8.  Problems Solved by PrefixList . . . . . . . . . . . . . . . .   8
+     8.1.  AS Abuse While Hijacking an ROV-Unknown Prefix  . . . . .   8
+     8.2.  AS Abuse Together with a Bogus ROA  . . . . . . . . . . .   8
+     8.3.  AS Accidentally Strips AS_PATH and Mis-Originates
+           Prefixes  . . . . . . . . . . . . . . . . . . . . . . . .   9
+     8.4.  Attack Surface Reduction  . . . . . . . . . . . . . . . .   9
+   9.  Operational Considerations  . . . . . . . . . . . . . . . . .   9
+     9.1.  Considerations when Prefix Owner Splits a Prefix  . . . .  10
+     9.2.  Considerations when Prefix Owner Has a New Prefix . . . .  10
+     9.3.  Why are ROA Prefixes not Simply Copied into
+           PrefixList? . . . . . . . . . . . . . . . . . . . . . . .  11
+   10. Security Considerations . . . . . . . . . . . . . . . . . . .  11
+   11. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  11
+     11.1.  SMI Security for S/MIME CMS Content Type
+            (1.2.840.113549.1.9.16.1)  . . . . . . . . . . . . . . .  11
+     11.2.  RPKI Signed Objects  . . . . . . . . . . . . . . . . . .  12
+     11.3.  RPKI Repository Name Schemes . . . . . . . . . . . . . .  12
+     11.4.  SMI Security for S/MIME Module Identifier
+            (1.2.840.113549.1.9.16.0)  . . . . . . . . . . . . . . .  12
+     11.5.  Media Types  . . . . . . . . . . . . . . . . . . . . . .  13
+       11.5.1.  PrefixList Media Type  . . . . . . . . . . . . . . .  13
+   12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  13
+     12.1.  Normative References . . . . . . . . . . . . . . . . . .  13
+     12.2.  Informative References . . . . . . . . . . . . . . . . .  14
+   Appendix A.  Acknowledgements . . . . . . . . . . . . . . . . . .  15
+   Appendix B.  Example payloads . . . . . . . . . . . . . . . . . .  15
+     B.1.  Example PrefixList eContent Payload . . . . . . . . . . .  15
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 2]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   Appendix C.  Implementation status  . . . . . . . . . . . . . . .  16
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  17
+
+1.  Introduction
+
+   This document defines an "RPKI Prefix List", a Cryptographic Message
+   Syntax (CMS) [RFC5652] [RFC6268] protected content type to carry a
+   list of IP prefixes and an Autonomous System Number.  The list of
+   prefixes describes the maximal set of prefixes that the Autonomous
+   System MAY announce to any of its routing peers.  The content is
+   signed by the holder of the RPKI private key associated with the
+   listed ASN.
+
+   RPKI Prefix Lists allow other RPKI-validating remote routing entities
+   to audit the collection of announcements that have the subject ASN as
+   the originating AS.  Any prefixes originated by this AS not contained
+   in a validated RPKI Prefix List SHOULD be regarded as invalid, but
+   ultimately their consequent handling by the local routing entity that
+   performed the audit function is a matter of local policy.
+
+   The intent of this object is to offer a RPKI-based successor to the
+   [RFC2622] 'route-set' class objects used in Internet Routing
+   Registries (IRRs).  The semantics of the route-set and the RPKI
+   Prefix List are similar.  The difference is that the RPKI signature
+   allows a relying party (RP) of be assured of the currency and
+   authenticity of the Prefix List as a complete enumeration of all
+   prefixes that may be announced as originating by this AS if the
+   object can be validated by the RPKI.
+
+1.1.  Requirements Language
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+2.  RPKI Signed Prefix List Profile
+
+   RPKI Prefix List objects follow the Signed Object Template for the
+   RPKI [RFC6488].
+
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 3]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+2.1.  EE Certificates
+
+   The Certification Authority (CA) MUST sign only one PrefixList with
+   each EE certificate and MUST generate a new key pair for each new
+   PrefixList or PrefixList Opt-Out Listing.  This type of EE
+   certificate is termed a "one-time-use" EE certificate (see Section 3
+   of [RFC6487]).
+
+2.2.  Object Filenames
+
+   A guideline for naming PrefixList is that the file name chosen in the
+   repository be a value derived from the public key of the EE
+   certificate.  One such method of generating a publication name is
+   described in Section 2.1 of [RFC4387]; convert the 160-bit hash of a
+   EE's public key value into a 27-character string using a modified
+   form of Base64 encoding, with an additional modification as proposed
+   in Section 5, table 2, of [RFC4648].
+
+3.  eContentType
+
+3.1.  The PrefixList eContentType
+
+   The eContentType for an PrefixList is defined as id-ct-
+   rpkiSignedPrefixList, with Object Identifier (OID)
+   1.2.840.113549.1.9.16.1.TBD.
+
+   This OID MUST appear within both the eContentType in the
+   encapContentInfo object and the ContentType signed attribute in the
+   signerInfo object (see [RFC6488]).
+
+4.  eContent
+
+4.1.  The PrefixList eContent
+
+   The content of an PrefixList is a list of IP address prefixes and a
+   single ASN.  An PrefixList is formally defined as follows:
+
+   RpkiSignedPrefixList-2023
+     { iso(1) member-body(2) us(840) rsadsi(113549)
+       pkcs(1) pkcs9(9) smime(16) mod(0)
+       id-mod-rpkiSignedPrefixList-2023(TBD) }
+
+   DEFINITIONS EXPLICIT TAGS ::=
+   BEGIN
+
+   IMPORTS
+     CONTENT-TYPE
+     FROM CryptographicMessageSyntax-2010 -- in [RFC6268]
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 4]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+       { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+         pkcs-9(9) smime(16) modules(0) id-mod-cms-2009(58) } ;
+
+   ct-rpkiSignedPrefixList CONTENT-TYPE ::=
+     { TYPE RpkiSignedPrefixList
+       IDENTIFIED BY id-ct-rpkiSignedPrefixList }
+
+   id-ct-rpkiSignedPrefixList OBJECT IDENTIFIER ::=
+     { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+       pkcs-9(9) id-smime(16) id-ct(1) TBD }
+
+   RpkiSignedPrefixList ::= SEQUENCE {
+     version [0]     INTEGER DEFAULT 0,
+     asID            ASID,
+     prefixList      SEQUENCE (SIZE(0..MAX)) OF AddressFamilyIPAddress }
+
+   ASID ::= INTEGER (1..4294967295)
+
+   AddressFamilyIPAddress ::= SEQUENCE {
+     addressFamily ADDRESS-FAMILY.&afi ({AddressFamilySet}),
+     prefix        ADDRESS-FAMILY.&Prefix ({AddressFamilySet}{@addressFamily}) }
+
+   ADDRESS-FAMILY ::= CLASS {
+     &afi          OCTET STRING (SIZE(2)) UNIQUE,
+     &Prefix
+   } WITH SYNTAX { AFI &afi PREFIX-TYPE &Prefix }
+
+   AddressFamilySet ADDRESS-FAMILY ::= { addressFamilyIPv4 | addressFamilyIPv6 }
+
+   addressFamilyIPv4 ADDRESS-FAMILY ::= { AFI afi-IPv4 PREFIX-TYPE AddressesIPv4 }
+   addressFamilyIPv6 ADDRESS-FAMILY ::= { AFI afi-IPv6 PREFIX-TYPE AddressesIPv6 }
+
+   afi-IPv4 OCTET STRING ::= '0001'H
+   afi-IPv6 OCTET STRING ::= '0002'H
+
+   AddressesIPv4 ::= Prefix{32}
+   AddressesIPv6 ::= Prefix{128}
+
+   Prefix {INTEGER: len} ::= SEQUENCE {
+     address       BIT STRING (SIZE(0..len)) }
+
+   END
+
+4.1.1.  Version
+
+   The version number of the RpkiSignedPrefixList MUST be 0.
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 5]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+4.1.2.  asID
+
+   The Autonomous System Number contained here MUST be a contained
+   within the set of AS Identifier resources listed by the EE
+   certificate carried in the CMS certificates field.
+
+4.1.3.  prefixList
+
+   This field contains a SEQUENCE of AddressFamilyIPAddress.  The
+   AddressFamilyIPAddress elements MUST be ordered in ascending order:
+   first by numeric value of the addressFamily field, then by value of
+   the prefix field.
+
+4.1.3.1.  Element AddressFamilyIPAddress
+
+   This field contains a SEQUENCE which contains one instance of
+   addressFamily and one instance of prefix.
+
+4.1.3.1.1.  addressFamily
+
+   This field contains an OCTET STRING which is either '0001'H (IPv4) or
+   '0002'H (IPv6).
+
+4.1.3.1.2.  prefix
+
+   This field contains a BIT STRING, its length bounded through the
+   addressFamily field.  The type is a BIT STRING, see Section 2.2.3.8
+   of [RFC3779] for more information.
+
+5.  PrefixList Validation
+
+   To validate an PrefixList, the RP MUST perform all the validation
+   checks specified in [RFC6488].  In addition, the RP MUST perform the
+   following validation steps:
+
+   1.  The contents of the CMS eContent field MUST conform to all of the
+       constraints described in Section 4.
+
+   2.  The Autonomous System Identifier Delegation extension [RFC3779]
+       MUST be present in the EE certificate contained in the CMS
+       certificates field.
+
+   3.  The AS identifier present in the RpkiSignedPrefixList eContent
+       'asID' field MUST be a subset of the AS Identifiers present in
+       the certificate extension.
+
+   4.  The Autonomous System Identifier Delegation extension MUST NOT
+       contain "inherit" elements.
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 6]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   5.  The IP Address Delegation Extension [RFC3779] is not used in
+       PrefixList, and MUST NOT be present in the EE certificate.
+
+6.  Recommendations for Creation of PrefixList Object
+
+   An AS SHOULD include all prefixes it originates or intends to
+   originate in its PrefixList.  These would include prefixes it owns
+   and the prefixes of BYOIP customers.  It is understood that some of
+   these prefixes may have ROA coverage and some may not.
+
+   There appears to be no need to include a maxLength in the PrefixList
+   object.  The reason is as follows.  Even if a prefix originated by an
+   AS (whether the prefix is owned by the AS owner or BYOIP) has a ROA
+   with maxLength (greater than the prefix length), typically only the
+   prefix and possibly some of its subprefixes (i.e., subsumed more
+   specific prefixes) are announced in BGP.  The owner of the prefix
+   informs the AS operator (typically via a customer interface) about
+   the prefixes and subprefixes (if any) it intends to announce, and
+   only those prefixes/subprefixes SHOULD be included in the PrefixList.
+   Other subprefixes SHOULD NOT be included merely because they are
+   permitted by the ROA or its maxLength.  This narrows the attack
+   surface for forged-origin subprefix hijacks which may be otherwise
+   wide due to the ROA maxLength (also see Section 8.4).
+
+7.  Route Verification: State Space and Outcomes
+
+   The state-space for route verification considering ROV and PrefixList
+   is enumerated in Table 1.  Also, mentioned are the combined results
+   for each state from combining both verifications.  A RECOMMENDED
+   route selection policy is also mentioned in the last column of
+   Table 1.  A network operator is free to select a policy that they
+   consider most appropriate.  The use of the term "route is ineligible"
+   in this document has the same meaning as in [RFC4271], i.e., "route
+   is ineligible to be installed in Loc-RIB and will be excluded from
+   the next phase of route selection".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 7]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+      +=======+=========+==============+==============+============+
+      | Index | ROV     | PrefixList   | Combined     | Route      |
+      |       |         | Verification | Verification | Selection  |
+      +=======+=========+==============+==============+============+
+      | 1     | Valid   | Valid        | Valid        | Eligible   |
+      +-------+---------+--------------+--------------+------------+
+      | 2     | Valid   | Unknown      | Unknown      | Eligible   |
+      +-------+---------+--------------+--------------+------------+
+      | 3     | Valid   | Invalid      | Invalid      | Ineligible |
+      +-------+---------+--------------+--------------+------------+
+      | 4     | Unknown | Valid        | Unknown      | Eligible   |
+      +-------+---------+--------------+--------------+------------+
+      | 5     | Unknown | Unknown      | Unknown      | Eligible   |
+      +-------+---------+--------------+--------------+------------+
+      | 6     | Unknown | Invalid      | Invalid      | Ineligible |
+      +-------+---------+--------------+--------------+------------+
+      | 7     | Invalid | Valid        | Invalid      | Ineligible |
+      +-------+---------+--------------+--------------+------------+
+      | 8     | Invalid | Unknown      | Invalid      | Ineligible |
+      +-------+---------+--------------+--------------+------------+
+      | 9     | Invalid | Invalid      | Invalid      | Ineligible |
+      +-------+---------+--------------+--------------+------------+
+
+                                 Table 1
+
+8.  Problems Solved by PrefixList
+
+   There are four types of security vulnerabilities in BGP that the
+   PrefixList object helps solve.  These are described below.
+
+8.1.  AS Abuse While Hijacking an ROV-Unknown Prefix
+
+   If AS A creates a PrefixList, it is protected in case an offending AS
+   X inserts AS A as the origin AS and hijacks a third-party prefix not
+   covered by a ROA.  The route will be ROV-Unknown and PrefixList
+   Invalid and hence considered ineligible by an RP (see #6 in Table 1).
+   Thus, AS A protects itself from this form of AS abuse.
+
+8.2.  AS Abuse Together with a Bogus ROA
+
+   If AS A creates a PrefixList, it is protected in case an offending AS
+   X inserts AS A as the origin AS and announces a prefix for which AS X
+   has an RPKI certificate and a bogus ROA showing AS A as the origin.
+   The route will be ROV-Valid due to the bogus ROA but PrefixList
+   Invalid and hence considered ineligible by an RP (see #3 in Table 1).
+   Thus, AS A protects itself from this second form of AS abuse as well.
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 8]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+8.3.  AS Accidentally Strips AS_PATH and Mis-Originates Prefixes
+
+   A multihomed AS learns a route from an eBGP neighbor and announces
+   the prefix to another eBGP neighbor as if it is being originated by
+   it (i.e., strips the received AS_PATH and re-originates the prefix).
+   This can be called re-origination or mis-origination (also see Type 5
+   route leak in [RFC7908]).  This attack has been seen to happen in
+   practice due to malfunctioning route optimizers.  If the affected
+   prefixes have ROA coverage, then ROV at a subsequent AS would detect
+   this anomaly.  However, if the affected prefixes do not have ROA
+   coverage, then these prefixes will be ROV-Unknown and PrefixList
+   Invalid and considered Invalid by an RP (per #6 in Table 1) provided
+   that the leaking AS has registered a PrefixList.  Thus, a leaking AS
+   protects itself in the sense that when the leaks (mis-originations)
+   reach a neighbor AS that is doing PrefixList based verification, they
+   will be detected and blocked from further propagation.
+
+8.4.  Attack Surface Reduction
+
+   Often a prefix owner includes more prefixes and/or more more-specific
+   prefixes (using maxLength or otherwise) in their ROA but has no plans
+   to announce some or many of them.  Due to this, they tend to create a
+   larger attack surface for forged-origin prefix and/or subprefix
+   hijacks.  However, they would notify the operator of the AS serving
+   them for origination purposes about the prefixes they do intend to
+   announce, and the AS operator would include only those prefixes in
+   the AS's PrefixList (see Section 9.3).  This helps to reduce the
+   attack surface for the forged-origin hijacks (per #3 in Table 1).
+
+9.  Operational Considerations
+
+   Multiple valid PrefixList objects could exist which contain the same
+   asID.  In such cases the union of address prefix members forms the
+   complete set of members.  It is highly RECOMMENDED that a compliant
+   CA maintains a single PrefixList for a given asID.
+
+   If an AS holder publishes a PrefixList(s), then relying parties
+   SHOULD assume that the list is complete for that originating AS, and
+   the presence of any route with the same AS as the originating AS and
+   an address prefix that is not included in the Prefix List implies
+   that the route has been propagated within the routing system without
+   the permission of the originating AS (see #3 and #6 in Table 1).
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                   [Page 9]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   The construction of an 'allowlist' for a given EBGP session using
+   RPKI PrefixList(s) compliments best practices [RFC7454] and rejecting
+   RPKI-invalid BGP route announcements [RFC6811].  In other words, if a
+   given BGP route is covered by a RPKI PrefixList, but also is
+   "Invalid" from a Route Origin Validation perspective, it is
+   RECOMMENDED to consider the route announcement ineligible (see #7 in
+   Table 1).
+
+9.1.  Considerations when Prefix Owner Splits a Prefix
+
+   A prefix owner with a prefix listed in the PrefixList of an AS may
+   one day decide to split its prefix and announce only a more specific
+   prefix (subsumed under the prefix) from the AS in consideration.
+   This operation needs to be managed gracefully applying the make-
+   before-break principle.  When notified of the intent, the AS would
+   update its PrefixList to reflect the change.  However, the updated
+   PrefixList would take some time to propagate to the RPs.  So, the AS
+   would continue to announce the original prefix as well as the more-
+   specific prefix for the period of time necessary for the propagation
+   of the updated PrefixList.  The period of time may be based on a
+   measure of the propagation time such as its anticipated 95th-
+   percentile value.  The prefix owner is kept informed of the resulting
+   wait times.
+
+9.2.  Considerations when Prefix Owner Has a New Prefix
+
+   A prefix owner with a prefix listed in the PrefixList of an AS may
+   one day obtain a new prefix and request the AS operator to announce
+   it.  The AS operator would recommend to the prefix owner to create a
+   ROA for the new prefix if not already done.  The prefix owner may or
+   may not be RPKI capable.  In any case, the AS operator would update
+   its PrefixList to add the new prefix.  The prefix owner may expect
+   the new prefix to be announced shortly after making the request.
+   However, the updated PrefixList would take some time to propagate to
+   the RPs.  The operator needs to apply the make-before-break
+   principle.  The AS operator would delay the announcemnt of the new
+   prefix for a period of time necessary for the propagation of the
+   updated PrefixList.  The period of time may be based on a measure of
+   the propagation time such as its anticipated 95th-percentile value.
+   The prefix owner is kept informed of the resulting wait times.
+
+
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 10]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+9.3.  Why are ROA Prefixes not Simply Copied into PrefixList?
+
+   It may be argued that including everything from any applicable ROA
+   (including the optional maxLength if it exists) in the PrefixList
+   object makes the PrefixList more effective.  One may reason that if
+   the prefix owner decides at a future date to announce (from the AS in
+   consideration) more specific prefixes permitted by the ROA, the
+   PrefixList would be ready for it a priori.  However, by doing so, the
+   benefit of a pragmatic PrefixList, i.e., reducing the attack surface
+   for potential subprefix hijacks, is lost.  So, there is a trade-off
+   and it appears better to opt for not copying prefixes from ROA into
+   the PrefixList and not including an optional maxLength in the
+   PrefixList.  Instead, the AS operator SHOULD include in the
+   PrefixList only the prefixes requested by the prefix owners for
+   origination (typically via a customer interface).  This helps
+   preserve the benefit of reduced attack surface for forged origin
+   hijacks.  If a prefix owner wishes readiness for future instantaneous
+   announcement of some split prefixes under some circumstances, they
+   can include them in their ROA a priori, and simultaneously inform the
+   AS operator to include them in the PrefixList as well.
+
+10.  Security Considerations
+
+   Relying Parties are warned that the data in an PrefixList is self-
+   asserted by the AS holder.  There is no implied authority from any IP
+   prefix holder that grants the AS permission to originate a route for
+   any prefixes.  Such an authority is separately conveyed in the RPKI
+   as a ROA.
+
+   While a one-time-use EE certificate must only be used to generate and
+   sign a single PrefixList object, CAs technically are not restricted
+   from generating and signing multiple different PrefixList objects
+   with a single key pair.  Any PrefixList objects sharing the same EE
+   certificate cannot be revoked individually.
+
+11.  IANA Considerations
+
+11.1.  SMI Security for S/MIME CMS Content Type
+       (1.2.840.113549.1.9.16.1)
+
+   IANA is requested to allocat the following in the "SMI Security for
+   S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)" registry:
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 11]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+    +=========+============================+=========================+
+    | Decimal | Description                | References              |
+    +=========+============================+=========================+
+    | TBD     | id-ct-rpkiSignedPrefixList | draft-spaghetti-        |
+    |         |                            | sidrops-rpki-prefixlist |
+    +---------+----------------------------+-------------------------+
+
+                                 Table 2
+
+11.2.  RPKI Signed Objects
+
+   IANA is requested to register two OIDs in the "RPKI Signed Objects"
+   registry [RFC6488] as follows:
+
+      +============+=============================+==================+
+      | Name       | OID                         | Reference        |
+      +============+=============================+==================+
+      | Signed     | 1.2.840.113549.1.9.16.1.TBD | draft-spaghetti- |
+      | PrefixList |                             | sidrops-rpki-    |
+      |            |                             | prefixlist       |
+      +------------+-----------------------------+------------------+
+
+                                  Table 3
+
+11.3.  RPKI Repository Name Schemes
+
+   IANA is requested to add the Signed PrefixList file extension to the
+   "RPKI Repository Name Schemes" registry [RFC6481] as follows:
+
+   +===========+============+=========================================+
+   | Filename  | RPKI       | Reference                               |
+   | Extension | Object     |                                         |
+   +===========+============+=========================================+
+   | .pfx      | Signed     | draft-spaghetti-sidrops-rpki-prefixlist |
+   |           | PrefixList |                                         |
+   +-----------+------------+-----------------------------------------+
+
+                                 Table 4
+
+11.4.  SMI Security for S/MIME Module Identifier
+       (1.2.840.113549.1.9.16.0)
+
+   IANA is requested to allocate the following in the "SMI Security for
+   S/MIME Module Identifier (1.2.840.113549.1.9.16.0)" registry:
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 12]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+       +=========+=======================+=========================+
+       | Decimal | Description           | References              |
+       +=========+=======================+=========================+
+       | TBD     | id-mod-rpkiSignedPref | draft-spaghetti-        |
+       |         | ixList-2023           | sidrops-rpki-prefixlist |
+       +---------+-----------------------+-------------------------+
+
+                                  Table 5
+
+11.5.  Media Types
+
+   IANA is requested to register the media type "application/rpki-
+   prefixlist" in the "Media Types" registry as follows:
+
+11.5.1.  PrefixList Media Type
+
+   Type name:  application
+   Subtype name:  rpki-prefixlist
+   Required parameters:  N/A
+   Optional parameters:  N/A
+   Encoding considerations:  binary
+   Security considerations:  Carries an RPKI Signed PrefixList.  This
+      media type contains no active content.  See Section 5 of draft-
+      spaghetti-sidrops-rpki-prefixlist for further information.
+   Interoperability considerations:  N/A
+   Published specification:  draft-spaghetti-sidrops-rpki-prefixlist
+   Applications that use this media type:  RPKI operators
+   Fragment identifier considerations:  N/A
+   Additional information:
+                            Content:  This media type is a signed
+         object, as defined in [RFC6488], which contains a payload of a
+         list of checksums as defined in draft-spaghetti-sidrops-rpki-
+         prefixlist.
+                            Magic number(s):  N/A
+                            File extension(s):  .pfx
+                            Macintosh file type code(s):  N/A
+   Person & email address to contact for further information:  Job
+      Snijders (job@fastly.com)
+   Intended usage:  COMMON
+   Restrictions on usage:  N/A
+   Author:  Job Snijders (job@fastly.com)
+   Change controller:  IETF
+
+12.  References
+
+12.1.  Normative References
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 13]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC2622]  Alaettinoglu, C., Villamizar, C., Gerich, E., Kessens, D.,
+              Meyer, D., Bates, T., Karrenberg, D., and M. Terpstra,
+              "Routing Policy Specification Language (RPSL)", RFC 2622,
+              DOI 10.17487/RFC2622, June 1999,
+              <https://www.rfc-editor.org/info/rfc2622>.
+
+   [RFC3779]  Lynn, C., Kent, S., and K. Seo, "X.509 Extensions for IP
+              Addresses and AS Identifiers", RFC 3779,
+              DOI 10.17487/RFC3779, June 2004,
+              <https://www.rfc-editor.org/info/rfc3779>.
+
+   [RFC5652]  Housley, R., "Cryptographic Message Syntax (CMS)", STD 70,
+              RFC 5652, DOI 10.17487/RFC5652, September 2009,
+              <https://www.rfc-editor.org/info/rfc5652>.
+
+   [RFC6481]  Huston, G., Loomans, R., and G. Michaelson, "A Profile for
+              Resource Certificate Repository Structure", RFC 6481,
+              DOI 10.17487/RFC6481, February 2012,
+              <https://www.rfc-editor.org/info/rfc6481>.
+
+   [RFC6487]  Huston, G., Michaelson, G., and R. Loomans, "A Profile for
+              X.509 PKIX Resource Certificates", RFC 6487,
+              DOI 10.17487/RFC6487, February 2012,
+              <https://www.rfc-editor.org/info/rfc6487>.
+
+   [RFC6488]  Lepinski, M., Chi, A., and S. Kent, "Signed Object
+              Template for the Resource Public Key Infrastructure
+              (RPKI)", RFC 6488, DOI 10.17487/RFC6488, February 2012,
+              <https://www.rfc-editor.org/info/rfc6488>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
+
+12.2.  Informative References
+
+   [RFC4271]  Rekhter, Y., Ed., Li, T., Ed., and S. Hares, Ed., "A
+              Border Gateway Protocol 4 (BGP-4)", RFC 4271,
+              DOI 10.17487/RFC4271, January 2006,
+              <https://www.rfc-editor.org/info/rfc4271>.
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 14]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   [RFC4387]  Gutmann, P., Ed., "Internet X.509 Public Key
+              Infrastructure Operational Protocols: Certificate Store
+              Access via HTTP", RFC 4387, DOI 10.17487/RFC4387, February
+              2006, <https://www.rfc-editor.org/info/rfc4387>.
+
+   [RFC4648]  Josefsson, S., "The Base16, Base32, and Base64 Data
+              Encodings", RFC 4648, DOI 10.17487/RFC4648, October 2006,
+              <https://www.rfc-editor.org/info/rfc4648>.
+
+   [RFC6268]  Schaad, J. and S. Turner, "Additional New ASN.1 Modules
+              for the Cryptographic Message Syntax (CMS) and the Public
+              Key Infrastructure Using X.509 (PKIX)", RFC 6268,
+              DOI 10.17487/RFC6268, July 2011,
+              <https://www.rfc-editor.org/info/rfc6268>.
+
+   [RFC6811]  Mohapatra, P., Scudder, J., Ward, D., Bush, R., and R.
+              Austein, "BGP Prefix Origin Validation", RFC 6811,
+              DOI 10.17487/RFC6811, January 2013,
+              <https://www.rfc-editor.org/info/rfc6811>.
+
+   [RFC7454]  Durand, J., Pepelnjak, I., and G. Doering, "BGP Operations
+              and Security", BCP 194, RFC 7454, DOI 10.17487/RFC7454,
+              February 2015, <https://www.rfc-editor.org/info/rfc7454>.
+
+   [RFC7908]  Sriram, K., Montgomery, D., McPherson, D., Osterweil, E.,
+              and B. Dickson, "Problem Definition and Classification of
+              BGP Route Leaks", RFC 7908, DOI 10.17487/RFC7908, June
+              2016, <https://www.rfc-editor.org/info/rfc7908>.
+
+Appendix A.  Acknowledgements
+
+   The authors wish to thank Russ Housley for feedback.
+
+Appendix B.  Example payloads
+
+B.1.  Example PrefixList eContent Payload
+
+   Below an example of a DER encoded PrefixList eContent is provided
+   with annotation following the '#' character.
+
+
+
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 15]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+$ cat << EOF | xxd -r -ps | openssl asn1parse -inform DER -i -dump
+3081a202023cca30819b306d04020001306703040043ddf5030400a5fee1
+030506a5feff00030400c093a8030400c22047030400c63a03030401cc02
+1e030400d11800030400d11801030407d11880030404d11810030400d118
+03030405d11820030402d11804030406d11840030403d11808030400d118
+08302a04020002302403070120010418144e0307002001067c208c030700
+200107fbfd040307002607fae00245
+EOF
+    0:d=0  hl=3 l= 153 cons: SEQUENCE
+    3:d=1  hl=2 l=   2 prim:  INTEGER        :3CCA # AS 15562
+    7:d=1  hl=3 l= 146 cons:  SEQUENCE
+   10:d=2  hl=2 l= 109 cons:   SEQUENCE
+   12:d=3  hl=2 l=   2 prim:    OCTET STRING
+      0000 - 00 01                              .. # IPv4 AFI
+   16:d=3  hl=2 l= 103 cons:    SEQUENCE
+   18:d=4  hl=2 l=   4 prim:     BIT STRING
+      0000 - 00 43 dd f5                      .C.. # 67.221.245.0/24
+   24:d=4  hl=2 l=   4 prim:     BIT STRING
+      0000 - 00 a5 fe e1                      .... # 165.254.225.0/24
+   30:d=4  hl=2 l=   5 prim:     BIT STRING
+      0000 - 06 a5 fe ff                      .... # 165.254.255.0/26
+      0005 - <SPACES/NULS>
+... snip ...
+  121:d=2  hl=2 l=  33 cons:   SEQUENCE
+  123:d=3  hl=2 l=   2 prim:    OCTET STRING
+      0000 - 00 02                            ..
+  127:d=3  hl=2 l=  27 cons:    SEQUENCE
+  129:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 01 20 01 04 18 14 4e             . ....N # 2001:418:144e::/47
+  138:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 20 01 06 7c 20 8c             . ..| . # 2001:67c:208c::/48
+  147:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 20 01 07 fb fd 04             . ..... # 2001:7fb:fd04::/48
+  156:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 26 07 fa e0 02 45             .&....E # 2607:fae0:245::/48
+
+
+Appendix C.  Implementation status
+
+   This section is to be removed before publishing as an RFC.
+
+   This section records the status of known implementations of the
+   protocol defined by this specification at the time of posting of this
+   Internet-Draft, and is based on a proposal described in RFC 7942.
+   The description of implementations in this section is intended to
+   assist the IETF in its decision processes in progressing drafts to
+   RFCs.  Please note that the listing of any individual implementation
+   here does not imply endorsement by the IETF.  Furthermore, no effort
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 16]
+
+Internet-Draft               RPKI PrefixList                October 2023
+
+
+   has been spent to verify the information presented here that was
+   supplied by IETF contributors.  This is not intended as, and must not
+   be construed to be, a catalog of available implementations or their
+   features.  Readers are advised to note that other implementations may
+   exist.
+
+   According to RFC 7942, "this will allow reviewers and working groups
+   to assign due consideration to documents that have the benefit of
+   running code, which may serve as evidence of valuable experimentation
+   and feedback that have made the implemented protocols more mature.
+   It is up to the individual working groups to use this information as
+   they see fit".
+
+   *  Example .pfx files were created by Job Snijders with the use of
+      asn1c and OpenSSL.
+
+Authors' Addresses
+
+   Job Snijders
+   Fastly
+   Amsterdam
+   Netherlands
+   Email: job@fastly.com
+
+
+   Geoff Huston
+   APNIC
+   6 Cordelia St
+   South Brisbane  QLD 4101
+   Australia
+   Email: gih@apnic.net
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Snijders & Huston          Expires 2 May 2024                  [Page 17]
