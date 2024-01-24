@@ -1,10 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 
 <!DOCTYPE rfc [
- <!ENTITY nbsp  "&#160;">
- <!ENTITY zwsp "&#8203;">
- <!ENTITY nbhy "&#8209;">
- <!ENTITY wj   "&#8288;">
+ <!ENTITY nbsp "&#160;">
 ]>
 
 <?rfc sortrefs="yes"?>
@@ -17,7 +14,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
      category="std"
-     docName="draft-ietf-sidrops-rpki-prefixlist-00"
+     docName="draft-ietf-sidrops-rpki-prefixlist-01"
      ipr="trust200902"
      xml:lang="en"
      sortRefs="true"
@@ -27,11 +24,9 @@
 
   <front>
 
-    <title abbrev="RPKI PrefixList">
-      A profile for RPKI Signed Lists of Prefixes
+    <title abbrev="RPKI Signed Prefix List">
+      A profile for Signed Prefix Lists for Use in the Resource Public Key Infrastructure (RPKI)
     </title>
-
-    <seriesInfo name="Internet-Draft" value="draft-ietf-sidrops-rpki-prefixlist-00"/>
 
     <author fullname="Job Snijders" initials="J." surname="Snijders">
       <organization>Fastly</organization>
@@ -71,8 +66,8 @@
     <abstract>
 
       <t>
-         This document defines a "RPKI Prefix List", a Cryptographic Message Syntax (CMS) protected content type for use with the Resource Public Key Infrastructure (RPKI) to carry the complete list of prefixes which an Autonomous System (AS) may originate to all or any of its routing peers.
-         The validation of a RPKI Prefix List confirms that the holder of the listed ASN produced the object, and that this list is a current, accurate and complete description of address prefixes that may be announced into the routing system originated by this AS.
+         This document defines a "Signed Prefix List", a Cryptographic Message Syntax (CMS) protected content type for use with the Resource Public Key Infrastructure (RPKI) to carry the complete list of prefixes which an Autonomous System (AS) may originate to all or any of its routing peers.
+         The validation of a Signed Prefix List confirms that the holder of the listed ASN produced the object, and that this list is a current, accurate and complete description of address prefixes that may be announced into the routing system originated by this AS.
       </t>
     </abstract>
   </front>
@@ -81,18 +76,21 @@
     <section anchor="intro">
       <name>Introduction</name>
       <t>
-        This document defines an "RPKI Prefix List", a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type to carry a list of IP prefixes and an Autonomous System Number.
+        This document defines a "Signed Prefix List", a Cryptographic Message Syntax (CMS) <xref target="RFC5652"/> <xref target="RFC6268"/> protected content type to carry a list of IP address prefixes and an Autonomous System Number.
         The list of prefixes describes the maximal set of prefixes that the Autonomous System MAY announce to any of its routing peers.
         The content is signed by the holder of the RPKI private key associated with the listed ASN.
       </t>
       <t>
-        RPKI Prefix Lists allow other RPKI-validating remote routing entities to audit the collection of announcements that have the subject ASN as the originating AS.
-        Any prefixes originated by this AS not contained in a validated RPKI Prefix List SHOULD be regarded as invalid, but ultimately their consequent handling by the local routing entity that performed the audit function is a matter of local policy.
+        RPKI Signed Prefix Lists allow other RPKI-validating remote routing entities to audit the collection of announcements that have the subject ASN as the originating AS.
+        Any prefixes originated by this AS not contained in a validated Signed Prefix List SHOULD be regarded as ineligible, but ultimately their consequent handling by the local routing entity that performed the audit function is a matter of local policy.
       </t>
       <t>
         The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in Internet Routing Registries (IRRs).
-        The semantics of the route-set and the RPKI Prefix List are similair.
-        The difference is that the RPKI signature allows a relying party of be assured of the currency and authenticity of the Prefix List as a complete enumeration of all prefixes that may be announced as originating by this AS if the object can be validated by the RPKI.
+        The semantics of the route-set and the Signed Prefix List are similair.
+        The difference is that the RPKI signature allows a relying party of be assured of the currency and authenticity of the Signed Prefix List as a complete enumeration of all prefixes that may be announced as originating by this AS if the object can be validated by the RPKI.
+      </t>
+      <t>
+        Signed Prefix List objects follow the Signed Object Template for the RPKI <xref target="RFC6488"/>.
       </t>
 
       <section anchor="requirements">
@@ -103,98 +101,79 @@
       </section>
     </section>
 
-    <section anchor="profile">
-      <name>RPKI Signed Prefix List Profile</name>
+    <section>
+      <name>The Signed Prefix List ContentType</name>
       <t>
-        RPKI Prefix List objects follow the Signed Object Template for the RPKI <xref target="RFC6488"/>.
+        The eContentType for a Prefix List is defined as id-ct-rpkiSignedPrefixList, with Object Identifier (OID) 1.2.840.113549.1.9.16.1.TBD.
+      </t>
+      <t>
+        This OID <bcp14>MUST</bcp14> appear within both the eContentType in the encapContentInfo object and the ContentType signed attribute in the signerInfo object (see <xref target="RFC6488"/>).
+      </t>
+    </section>
+
+    <section anchor="econtent">
+      <name>The Signed Prefix List eContent</name>
+      <t>
+        The content of a Signed Prefix List is a single ASN and a list of IP address prefixes.
+        An Signed Prefix List is formally defined as follows:
       </t>
 
-      <section title="EE Certificates">
-        <t>
-          The Certification Authority (CA) <bcp14>MUST</bcp14> sign only one PrefixList with each EE certificate and <bcp14>MUST</bcp14> generate a new key pair for each new PrefixList or PrefixList Opt-Out Listing.
-          This type of EE certificate is termed a "one-time-use" EE certificate (see <xref target="RFC6487" section="3"/>).
-        </t>
-      </section>
-      <section title="Object Filenames">
-        <t>
-          A guideline for naming PrefixList is that the file name chosen in the repository be a value derived from the public key of the EE certificate.
-          One such method of generating a publication name is described in Section 2.1 of <xref target="RFC4387"/>; convert the 160-bit hash of a EE's public key value into a 27-character string using a modified form of Base64 encoding, with an additional modification as proposed in Section 5, table 2, of <xref target="RFC4648"/>.
-        </t>
-      </section>
-    </section>
-
-    <section anchor="content">
-      <name>eContentType</name>
-      <section>
-        <name>The PrefixList eContentType</name>
-        <t>
-          The eContentType for an PrefixList is defined as id-ct-rpkiSignedPrefixList, with Object Identifier (OID) 1.2.840.113549.1.9.16.1.TBD.
-        </t>
-        <t>
-          This OID <bcp14>MUST</bcp14> appear within both the eContentType in the encapContentInfo object and the ContentType signed attribute in the signerInfo object (see <xref target="RFC6488"/>).
-        </t>
-      </section>
-    </section>
-
-     <section anchor="econtent">
-      <name>eContent</name>
+      <sourcecode type="asn.1" src="RpkiSignedPrefixList-2024.asn"/>
 
       <section>
-        <name>The PrefixList eContent</name>
+        <name>Version</name>
         <t>
-          The content of an PrefixList is a list of IP address prefixes and a single ASN.
-          An PrefixList is formally defined as follows:
+          The version number of the RpkiSignedPrefixList <bcp14>MUST</bcp14> be 0.
         </t>
+      </section>
 
-        <sourcecode type="asn.1" src="RpkiSignedPrefixList-2023.asn"/>
+      <section>
+        <name>asID</name>
+        <t>
+          The Autonomous System Number contained here <bcp14>MUST</bcp14> be a contained within the set of AS Identifier resources listed by the EE certificate carried in the CMS certificates field.
+        </t>
+      </section>
 
+      <section>
+        <name>prefixes</name>
+        <t>
+          This field contains a SEQUENCE of AddressFamilyAddressPrefixes.
+          The AddressFamilyAddressPrefixes elements <bcp14>MUST</bcp14> be ordered in ascending order by numeric value of the addressFamily field.
+        </t>
         <section>
-          <name>Version</name>
+          <name>Element AddressFamilyAddressPrefixes</name>
           <t>
-            The version number of the RpkiSignedPrefixList <bcp14>MUST</bcp14> be 0.
-          </t>
-        </section>
-
-        <section>
-          <name>asID</name>
-          <t>
-            The Autonomous System Number contained here <bcp14>MUST</bcp14> be a contained within the set of AS Identifier resources listed by the EE certificate carried in the CMS certificates field.
-          </t>
-        </section>
-
-        <section>
-          <name>prefixList</name>
-          <t>
-            This field contains a SEQUENCE of AddressFamilyIPAddress.
-            The AddressFamilyIPAddress elements <bcp14>MUST</bcp14> be ordered in ascending order: first by numeric value of the addressFamily field, then by value of the prefix field.
+            This field contains a SEQUENCE which contains one instance of addressFamily and one instance of addressPrefixes.
           </t>
           <section>
-            <name>Element AddressFamilyIPAddress</name>
+            <name>addressFamily</name>
             <t>
-              This field contains a SEQUENCE which contains one instance of addressFamily and one instance of prefix.
+              This field contains a OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
             </t>
-            <section>
-              <name>addressFamily</name>
-              <t>
-                This field contains a OCTET STRING which is either '0001'H (IPv4) or '0002'H (IPv6).
-              </t>
-            </section>
-            <section>
-              <name>prefix</name>
-              <t>
-                This field contains a BIT STRING, its length bounded through the addressFamily field.
-                The type is a BIT STRING, see Section 2.2.3.8 of <xref target="RFC3779" /> for more information.
-              </t>
-            </section>
           </section>
+          <section>
+            <name>addressPrefixes</name>
+            <t>
+              This field contains a SEQUENCE of parameterized AddressPrefix instances.
+              The canonicalization procedure specified in <xref target="I-D.ietf-sidrops-rfc6482bis" section="4.3.3"/> <bcp14>MUST</bcp14> be applied.
+            </t>
+          </section>
+          <section>
+            <name>Element AddressPrefix</name>
+            <t>
+              This element is length bounded through the Information Object Class ADDRESS-FAMILY.
+              The type is a BIT STRING, see <xref target="RFC3779" section="2.2.3.8"/> for more information on encoding IP prefixes.
+            </t>
+          </section>
+
         </section>
       </section>
     </section>
 
     <section anchor="validation">
-      <name>PrefixList Validation</name>
+      <name>Signed Prefix List Validation</name>
       <t>
-        To validate an PrefixList, the RP <bcp14>MUST</bcp14> perform all the validation checks specified in <xref target="RFC6488"/>.
+        To validate a Signed Prefix List, the RP <bcp14>MUST</bcp14> perform all the validation checks specified in <xref target="RFC6488"/>.
         In addition, the RP <bcp14>MUST</bcp14> perform the following validation steps:
       </t>
       <ol>
@@ -211,7 +190,7 @@
           The Autonomous System Identifier Delegation extension <bcp14>MUST NOT</bcp14> contain "inherit" elements.
         </li>
         <li>
-          The IP Address Delegation Extension <xref target="RFC3779"/> is not used in PrefixList, and <bcp14>MUST NOT</bcp14> be present in the EE certificate.
+          The IP Address Delegation Extension <xref target="RFC3779"/> is not used in Signed Prefix List, and <bcp14>MUST NOT</bcp14> be present in the EE certificate.
         </li>
       </ol>
     </section>
@@ -219,29 +198,45 @@
     <section>
       <name>Operational Considerations</name>
       <t>
-        Multiple valid PrefixList objects could exist which contain the same asID.
+        Multiple valid Signed Prefix List objects which contain the same asID could exist.
         In such cases the union of address prefix members forms the complete set of members.
-        It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single PrefixList for a given asID.
+        It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single Signed Prefix List for a given asID.
       </t>
       <t>
-	If an AS holder publishes a PrefixList, then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
+        If an AS holder publishes a Signed Prefix List, then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Signed Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
       </t>
       <t>
-        The construction of an 'allowlist' for a given EBGP session using RPKI PrefixList(s) compliments best practises <xref target="RFC7454"/> and rejecting RPKI-invalid BGP route announcements <xref target="RFC6811"/>.
-        In other words, if a given BGP route is covered by a RPKI PrefixList, but also is "invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement.
+        The construction of an 'allowlist' for a given EBGP session using Signed Prefix List(s) compliments both best current practises <xref target="RFC7454"/> and the practise of rejecting RPKI-ROV-invalid BGP route announcements <xref target="RFC6811"/>.
+        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement.
       </t>
+
+      <section title="EE Certificates">
+        <t>
+          The Certificate Authority (CA) <bcp14>SHOULD</bcp14> sign only one Signed Prefix List with each generated private key and <bcp14>SHOULD</bcp14> generate a new key pair for each new version of a Signed Prefix List object.
+          The CA <bcp14>MUST</bcp14> generate a new End Entity (EE) certificate for each signing of a particular Signed Prefix List.
+          An associated EE certificate used in this fashion is termed a "one-time-use" EE certificate (see <xref target="RFC6487" section="3"/>).
+        </t>
+      </section>
+
+      <section title="Object Filenames">
+        <t>
+          A guideline for naming Signed Prefix List objects is that the file name chosen in the repository be a value derived from the public key of the EE certificate.
+          One such method of generating a publication name is described in <xref target="RFC4387" section="2.1"/>; convert the 160-bit hash of a EE's public key value into a 27-character string using a modified form of Base64 encoding, with an additional modification as proposed in Section 5, table 2, of <xref target="RFC4648"/>.
+        </t>
+      </section>
+
     </section>
 
     <section anchor="security">
       <name>Security Considerations</name>
       <t>
-        Relying Parties are warned that the data in an PrefixList is self-asserted by the AS holder.
+        Relying Parties are warned that the data in a Signed Prefix List is self-asserted by the AS holder.
         There is no implied authority from any IP prefix holder that grants the AS permission to originate a route for any prefixes.
         Such an authority is separately conveyed in the RPKI as a ROA.
       </t>
       <t>
-        While a one-time-use EE certificate must only be used to generate and sign a single PrefixList object, CAs technically are not restricted from generating and signing multiple different PrefixList objects with a single key pair.
-        Any PrefixList objects sharing the same EE certificate cannot be revoked individually.
+        While a one-time-use EE certificate must only be used to generate and sign a single Signed Prefix List object, CAs are not technically restricted from generating and signing multiple different Signed Prefix List objects with a single key pair.
+        Any Signed Prefix List objects sharing the same EE certificate cannot be revoked individually.
       </t>
     </section>
 
@@ -265,9 +260,9 @@
             </thead>
             <tbody>
               <tr>
-        	<td>TBD</td>
-        	<td>id-ct-rpkiSignedPrefixList</td>
-        	<td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+                <td>TBD</td>
+                <td>id-ct-rpkiSignedPrefixList</td>
+                <td>draft-ietf-sidrops-rpki-prefixlist</td>
               </tr>
             </tbody>
         </table>
@@ -290,9 +285,9 @@
         </thead>
           <tbody>
             <tr>
-              <td>Signed PrefixList</td>
+              <td>Signed Prefix List</td>
               <td>1.2.840.113549.1.9.16.1.TBD</td>
-              <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+              <td>draft-ietf-sidrops-rpki-prefixlist</td>
             </tr>
           </tbody>
         </table>
@@ -301,7 +296,7 @@
       <section>
         <name>RPKI Repository Name Schemes</name>
         <t>
-          IANA is requested to add the Signed PrefixList file extension to the "RPKI Repository Name Schemes" registry <xref target="RFC6481"/> as follows:
+          IANA is requested to add the Signed Prefix List file extension to the "RPKI Repository Name Schemes" registry <xref target="RFC6481"/> as follows:
         </t>
 
         <table anchor="rpki-repository-name-schemes" align="center">
@@ -315,9 +310,9 @@
         </thead>
           <tbody>
             <tr>
-              <td>.pfx</td>
-              <td>Signed PrefixList</td>
-              <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+              <td>.spl</td>
+              <td>Signed Prefix List</td>
+              <td>draft-ietf-sidrops-rpki-prefixlist</td>
             </tr>
           </tbody>
         </table>
@@ -341,8 +336,8 @@
           <tbody>
             <tr>
               <td>TBD</td>
-              <td>id-mod-rpkiSignedPrefixList-2023</td>
-              <td>draft-spaghetti-sidrops-rpki-prefixlist</td>
+              <td>id-mod-rpkiSignedPrefixList-2024</td>
+              <td>draft-ietf-sidrops-rpki-prefixlist</td>
             </tr>
           </tbody>
         </table>
@@ -354,25 +349,25 @@
           IANA is requested to register the media type "application/rpki-prefixlist" in the "Media Types" registry as follows:
         </t>
         <section>
-        <name>PrefixList Media Type</name>
+        <name>Signed Prefix List Media Type</name>
         <dl spacing="compact">
            <dt>Type name:</dt><dd>application</dd>
            <dt>Subtype name:</dt><dd>rpki-prefixlist</dd>
            <dt>Required parameters:</dt><dd>N/A</dd>
            <dt>Optional parameters:</dt><dd>N/A</dd>
            <dt>Encoding considerations:</dt><dd>binary</dd>
-           <dt>Security considerations:</dt><dd>Carries an RPKI Signed PrefixList. This media type contains no active content. See <xref target="validation"/> of draft-spaghetti-sidrops-rpki-prefixlist for further information.</dd>
+           <dt>Security considerations:</dt><dd>Carries a Signed Prefix List. This media type contains no active content. See <xref target="validation"/> of draft-ietf-sidrops-rpki-prefixlist for further information.</dd>
            <dt>Interoperability considerations:</dt><dd>N/A</dd>
-           <dt>Published specification:</dt><dd>draft-spaghetti-sidrops-rpki-prefixlist</dd>
+           <dt>Published specification:</dt><dd>draft-ietf-sidrops-rpki-prefixlist</dd>
            <dt>Applications that use this media type:</dt><dd>RPKI operators</dd>
            <dt>Fragment identifier considerations:</dt><dd>N/A</dd>
            <dt>Additional information:</dt>
            <dd>
            <dl spacing="compact">
              <dt><br/></dt><dd/>
-             <dt>Content:</dt><dd>This media type is a signed object, as defined in [RFC6488], which contains a payload of a list of checksums as defined in draft-spaghetti-sidrops-rpki-prefixlist.</dd>
+             <dt>Content:</dt><dd>This media type is a signed object, as defined in [RFC6488], which contains a list of prefixes as defined in draft-ietf-sidrops-rpki-prefixlist.</dd>
              <dt>Magic number(s):</dt><dd>N/A</dd>
-             <dt>File extension(s):</dt><dd>.pfx</dd>
+             <dt>File extension(s):</dt><dd>.spl</dd>
              <dt>Macintosh file type code(s):</dt><dd>N/A</dd>
            </dl>
            </dd>
@@ -401,6 +396,7 @@
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6487.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6488.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+          <xi:include href="https://datatracker.ietf.org/doc/bibxml3/draft-ietf-sidrops-rfc6482bis.xml"/>
       </references>
 
       <references>
@@ -427,47 +423,44 @@
       <name>Example payloads</name>
 
     <section anchor="example-prefixlist">
-      <name>Example PrefixList eContent Payload</name>
+      <name>Example Signed Prefix List eContent Payload</name>
       <t>
-        Below an example of a DER encoded PrefixList eContent is provided with annotation following the '#' character.
+        Below an example of a DER-encoded Signed Prefix List eContent is provided with annotation following the '#' character.
       </t>
       <artwork>
 <![CDATA[
 $ cat << EOF | xxd -r -ps | openssl asn1parse -inform DER -i -dump
-3081a202023cca30819b306d04020001306703040043ddf5030400a5fee1
+3081b102023cca3081aa307304020001306d03040043ddf5030400a5fee1
 030506a5feff00030400c093a8030400c22047030400c63a03030401cc02
-1e030400d11800030400d11801030407d11880030404d11810030400d118
-03030405d11820030402d11804030406d11840030403d11808030400d118
-08302a04020002302403070120010418144e0307002001067c208c030700
-200107fbfd040307002607fae00245
+1e030400d11800030400d11801030400d11803030402d11804030403d118
+08030400d11808030400d11809030404d11810030405d11820030406d118
+40030407d11880303304020002302d03070120010418144e030700200106
+7c208c030700200107fbfd040307002607fae002450307002a0eb2400000
 EOF
-    0:d=0  hl=3 l= 153 cons: SEQUENCE
-    3:d=1  hl=2 l=   2 prim:  INTEGER        :3CCA # AS 15562
-    7:d=1  hl=3 l= 146 cons:  SEQUENCE
-   10:d=2  hl=2 l= 109 cons:   SEQUENCE
+    0:d=0  hl=3 l= 177 cons: SEQUENCE
+    3:d=1  hl=2 l=   2 prim:  INTEGER       :3CCA  # AS 15562
+    7:d=1  hl=3 l= 170 cons:  SEQUENCE
+   10:d=2  hl=2 l= 115 cons:   SEQUENCE
    12:d=3  hl=2 l=   2 prim:    OCTET STRING
-      0000 - 00 01                              .. # IPv4 AFI
-   16:d=3  hl=2 l= 103 cons:    SEQUENCE
+      0000 - 00 01                                 # AFI IPv4
+   16:d=3  hl=2 l= 109 cons:    SEQUENCE
    18:d=4  hl=2 l=   4 prim:     BIT STRING
-      0000 - 00 43 dd f5                      .C.. # 67.221.245.0/24
+      0000 - 00 43 dd f5                           # 67.221.245.0/24
    24:d=4  hl=2 l=   4 prim:     BIT STRING
-      0000 - 00 a5 fe e1                      .... # 165.254.225.0/24
+      0000 - 00 a5 fe e1                           # 165.254.225.0/24
    30:d=4  hl=2 l=   5 prim:     BIT STRING
-      0000 - 06 a5 fe ff                      .... # 165.254.255.0/26
+      0000 - 06 a5 fe ff                           # 165.254.255.0/26
       0005 - <SPACES/NULS>
 ... snip ...
-  121:d=2  hl=2 l=  33 cons:   SEQUENCE
-  123:d=3  hl=2 l=   2 prim:    OCTET STRING
-      0000 - 00 02                            ..
-  127:d=3  hl=2 l=  27 cons:    SEQUENCE
-  129:d=4  hl=2 l=   7 prim:     BIT STRING
-      0000 - 01 20 01 04 18 14 4e             . ....N # 2001:418:144e::/47
-  138:d=4  hl=2 l=   7 prim:     BIT STRING
-      0000 - 00 20 01 06 7c 20 8c             . ..| . # 2001:67c:208c::/48
-  147:d=4  hl=2 l=   7 prim:     BIT STRING
-      0000 - 00 20 01 07 fb fd 04             . ..... # 2001:7fb:fd04::/48
-  156:d=4  hl=2 l=   7 prim:     BIT STRING
-      0000 - 00 26 07 fa e0 02 45             .&....E # 2607:fae0:245::/48
+  127:d=2  hl=2 l=  51 cons:   SEQUENCE
+  129:d=3  hl=2 l=   2 prim:    OCTET STRING
+      0000 - 00 02                                 # AFI IPv6
+  133:d=3  hl=2 l=  45 cons:    SEQUENCE
+  135:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 01 20 01 04 18 14 4e                  # 2001:418:144e::/47
+  144:d=4  hl=2 l=   7 prim:     BIT STRING
+      0000 - 00 20 01 06 7c 20 8c                  # 2001:67c:208c::/48
+... snip ...
 ]]>
       </artwork>
 
@@ -475,6 +468,7 @@ EOF
 
     </section>
 
+<!--
     <section removeInRFC="true">
       <name>Implementation status</name>
       <t>
@@ -492,11 +486,11 @@ EOF
 
       <ul>
         <li>
-          Example .pfx files were created by Job Snijders with the use of asn1c and OpenSSL.
+          Example .spl files were created by Job Snijders.
         </li>
       </ul>
-
     </section>
+-->
 
   </back>
 

@@ -1,7 +1,7 @@
-RpkiSignedPrefixList-2023
+RpkiSignedPrefixList-2024
   { iso(1) member-body(2) us(840) rsadsi(113549)
     pkcs(1) pkcs9(9) smime(16) mod(0)
-    id-mod-rpkiSignedPrefixList-2023(TBD) }
+    id-mod-rpkiSignedPrefixList-2024(TBD) }
 
 DEFINITIONS EXPLICIT TAGS ::=
 BEGIN
@@ -21,33 +21,30 @@ id-ct-rpkiSignedPrefixList OBJECT IDENTIFIER ::=
     pkcs-9(9) id-smime(16) id-ct(1) TBD }
 
 RpkiSignedPrefixList ::= SEQUENCE {
-  version [0]     INTEGER DEFAULT 0,
-  asID            ASID,
-  prefixList      SEQUENCE (SIZE(0..MAX)) OF AddressFamilyIPAddress }
+  version [0]     INTEGER (0..MAX) DEFAULT 0,
+  asID            INTEGER (1..4294967295),
+  prefixes        SEQUENCE (SIZE(0..2)) OF AddressFamilyAddressPrefixes }
 
-ASID ::= INTEGER (1..4294967295)
-
-AddressFamilyIPAddress ::= SEQUENCE {
-  addressFamily ADDRESS-FAMILY.&afi ({AddressFamilySet}),
-  prefix        ADDRESS-FAMILY.&Prefix ({AddressFamilySet}{@addressFamily}) }
+AddressFamilyAddressPrefixes ::= SEQUENCE {
+  addressFamily   ADDRESS-FAMILY.&afi ({AddressFamilySet}),
+  addressPrefixes ADDRESS-FAMILY.&Prefixes ({AddressFamilySet}{@addressFamily}) }
 
 ADDRESS-FAMILY ::= CLASS {
   &afi          OCTET STRING (SIZE(2)) UNIQUE,
-  &Prefix
-} WITH SYNTAX { AFI &afi PREFIX-TYPE &Prefix }
+  &Prefixes
+} WITH SYNTAX { AFI &afi PREFIXES &Prefixes }
 
 AddressFamilySet ADDRESS-FAMILY ::= { addressFamilyIPv4 | addressFamilyIPv6 }
 
-addressFamilyIPv4 ADDRESS-FAMILY ::= { AFI afi-IPv4 PREFIX-TYPE AddressesIPv4 }
-addressFamilyIPv6 ADDRESS-FAMILY ::= { AFI afi-IPv6 PREFIX-TYPE AddressesIPv6 }
+addressFamilyIPv4 ADDRESS-FAMILY ::= { AFI afi-IPv4 PREFIXES IPv4Prefixes }
+addressFamilyIPv6 ADDRESS-FAMILY ::= { AFI afi-IPv6 PREFIXES IPv6Prefixes }
 
 afi-IPv4 OCTET STRING ::= '0001'H
 afi-IPv6 OCTET STRING ::= '0002'H
 
-AddressesIPv4 ::= Prefix{32}
-AddressesIPv6 ::= Prefix{128}
+IPv4Prefixes ::= SEQUENCE (SIZE(1..MAX)) OF AddressPrefix{32}
+IPv6Prefixes ::= SEQUENCE (SIZE(1..MAX)) OF AddressPrefix{128}
 
-Prefix {INTEGER: len} ::= SEQUENCE {
-  address       BIT STRING (SIZE(0..len)) }
+AddressPrefix {INTEGER: len} ::= BIT STRING (SIZE(0..len))
 
 END

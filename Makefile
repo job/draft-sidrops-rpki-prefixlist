@@ -1,4 +1,4 @@
-NAME=draft-spaghetti-sidrops-rpki-prefixlist
+NAME=draft-ietf-sidrops-rpki-prefixlist
 
 .PHONY: all
 all: drafts
