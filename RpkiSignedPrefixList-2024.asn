@@ -42,9 +42,12 @@ addressFamilyIPv6 ADDRESS-FAMILY ::= { AFI afi-IPv6 PREFIXES IPv6Prefixes }
 afi-IPv4 OCTET STRING ::= '0001'H
 afi-IPv6 OCTET STRING ::= '0002'H
 
-IPv4Prefixes ::= SEQUENCE (SIZE(1..MAX)) OF AddressPrefix{32}
-IPv6Prefixes ::= SEQUENCE (SIZE(1..MAX)) OF AddressPrefix{128}
+IPv4Prefixes ::= SEQUENCE (SIZE(1..MAX)) OF AddressPrefix{ub-IPv4}
+IPv6Prefixes ::= SEQUENCE (SIZE(1..MAX)) OF AddressPrefix{ub-IPv6}
 
-AddressPrefix {INTEGER: len} ::= BIT STRING (SIZE(0..len))
+ub-IPv4 INTEGER ::= 32
+ub-IPv6 INTEGER ::= 128
+
+AddressPrefix {INTEGER: ub} ::= BIT STRING (SIZE(0..ub))
 
 END
