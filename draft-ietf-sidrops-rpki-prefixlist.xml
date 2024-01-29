@@ -14,7 +14,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
      category="std"
-     docName="draft-ietf-sidrops-rpki-prefixlist-01"
+     docName="draft-ietf-sidrops-rpki-prefixlist-02"
      ipr="trust200902"
      xml:lang="en"
      sortRefs="true"
@@ -104,7 +104,7 @@
     <section>
       <name>The Signed Prefix List ContentType</name>
       <t>
-        The eContentType for a Prefix List is defined as id-ct-rpkiSignedPrefixList, with Object Identifier (OID) 1.2.840.113549.1.9.16.1.TBD.
+        The eContentType for a Prefix List is defined as id-ct-rpkiSignedPrefixList, with Object Identifier (OID) 1.2.840.113549.1.9.16.1.51.
       </t>
       <t>
         This OID <bcp14>MUST</bcp14> appear within both the eContentType in the encapContentInfo object and the ContentType signed attribute in the signerInfo object (see <xref target="RFC6488"/>).
@@ -246,7 +246,7 @@
       <section>
         <name>SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)</name>
         <t>
-          IANA is requested to allocated the following in the "SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)" registry:
+          IANA has temporarily allocated the following in the "SMI Security for S/MIME CMS Content Type (1.2.840.113549.1.9.16.1)" registry:
         </t>
 
         <table anchor="cms-content-type" align="center">
@@ -260,7 +260,7 @@
             </thead>
             <tbody>
               <tr>
-                <td>TBD</td>
+                <td>51</td>
                 <td>id-ct-rpkiSignedPrefixList</td>
                 <td>draft-ietf-sidrops-rpki-prefixlist</td>
               </tr>
@@ -286,7 +286,7 @@
           <tbody>
             <tr>
               <td>Signed Prefix List</td>
-              <td>1.2.840.113549.1.9.16.1.TBD</td>
+              <td>1.2.840.113549.1.9.16.1.51</td>
               <td>draft-ietf-sidrops-rpki-prefixlist</td>
             </tr>
           </tbody>

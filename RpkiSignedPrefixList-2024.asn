@@ -18,12 +18,12 @@ ct-rpkiSignedPrefixList CONTENT-TYPE ::=
 
 id-ct-rpkiSignedPrefixList OBJECT IDENTIFIER ::=
   { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
-    pkcs-9(9) id-smime(16) id-ct(1) TBD }
+    pkcs-9(9) id-smime(16) id-ct(1) 51 }
 
 RpkiSignedPrefixList ::= SEQUENCE {
   version [0]     INTEGER (0..MAX) DEFAULT 0,
   asID            INTEGER (1..4294967295),
-  prefixes        SEQUENCE (SIZE(0..2)) OF AddressFamilyAddressPrefixes }
+  prefixBlocks    SEQUENCE (SIZE(0..2)) OF AddressFamilyAddressPrefixes }
 
 AddressFamilyAddressPrefixes ::= SEQUENCE {
   addressFamily   ADDRESS-FAMILY.&afi ({AddressFamilySet}),
