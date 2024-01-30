@@ -14,7 +14,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
      category="std"
-     docName="draft-ietf-sidrops-rpki-prefixlist-02"
+     docName="draft-ietf-sidrops-rpki-prefixlist-03"
      ipr="trust200902"
      xml:lang="en"
      sortRefs="true"
@@ -53,6 +53,21 @@
         <email>gih@apnic.net</email>
       </address>
     </author>
+<!--
+    <author fullname="Kotikalapudi Sriram" initials="K." surname="Sriram">
+      <organization abbrev="USA NIST" showOnFrontPage="true">USA National Institute of Standards and Technology</organization>
+      <address>
+        <postal>
+          <street>100 Bureau Drive</street>
+          <city>Gaithersburg</city>
+          <region>MD</region>
+          <code>20899</code>
+          <country>United States of America</country>
+        </postal>
+        <email>ksriram@nist.gov</email>
+      </address>
+    </author>
+-->
 
     <date />
 
@@ -86,8 +101,8 @@
       </t>
       <t>
         The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in Internet Routing Registries (IRRs).
-        The semantics of the route-set and the Signed Prefix List are similair.
-        The difference is that the RPKI signature allows a relying party of be assured of the currency and authenticity of the Signed Prefix List as a complete enumeration of all prefixes that may be announced as originating by this AS if the object can be validated by the RPKI.
+        The semantics of the route-set and the Signed Prefix List are similar.
+        The difference is that the RPKI signature allows a relying party to be assured of the currency and authenticity of the Signed Prefix List as a complete enumeration of all prefixes that may be announced as originating from this AS if the object can be validated by the RPKI.
       </t>
       <t>
         Signed Prefix List objects follow the Signed Object Template for the RPKI <xref target="RFC6488"/>.
@@ -170,6 +185,15 @@
       </section>
     </section>
 
+    <section anchor="semantics">
+      <name>Semantics of Signed Prefix List</name>
+      <t>
+        The IP address prefixes listed in a Signed Prefix List object is an enumeration of prefixes that may be announced as originating from the AS identified by the asID if the object can be validated by the RPKI (<xref target="validation"/>).
+        The object does not implicitly permit a more-specific prefix subsumed by a listed IP address prefix to be originated by this AS.
+        For any such more-specific prefix to be permitted by the Signed Prefix List object, it must be explicitly listed in list of IP address prefixes.
+      </t>
+    </section>
+
     <section anchor="validation">
       <name>Signed Prefix List Validation</name>
       <t>
@@ -184,7 +208,7 @@
           The Autonomous System Identifier Delegation extension <xref target="RFC3779"/> <bcp14>MUST</bcp14> be present in the EE certificate contained in the CMS certificates field.
         </li>
         <li>
-          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of the AS Indentifiers present in the certificate extension.
+          The AS identifier present in the RpkiSignedPrefixList eContent 'asID' field <bcp14>MUST</bcp14> be a subset of the AS Identifiers present in the certificate extension.
         </li>
         <li>
           The Autonomous System Identifier Delegation extension <bcp14>MUST NOT</bcp14> contain "inherit" elements.
@@ -193,21 +217,97 @@
           The IP Address Delegation Extension <xref target="RFC3779"/> is not used in Signed Prefix List, and <bcp14>MUST NOT</bcp14> be present in the EE certificate.
         </li>
       </ol>
-    </section>
-
-    <section>
+      <section title="Validated PrefixList Payload" anchor="VPP">
+      <t>
+        Normally there would be a single valid Signed Prefix List object for a given asID (see <xref target="operations"/>).
+        However, multiple valid Signed Prefix List objects which contain the same asID could exist.
+        In such cases, the union of the resulting address prefix members forms the complete set of members.
+        The complete set (resulting from a single or multiple PrefixLists) is locally stored by a relying party, and such an object is called the Validated PrefixList Payload (VPP) for the asID in consideration.
+        (Note: The VPP is akin to the Validated ROA Payload (VRP) for Route Origin Authorization (ROA) <xref target="RFC6811"/>.)
+        For a given asID, if there is only a valid Signed Prefix List object with zero prefixes listed, then the VPP for the asID MUST show 'Empty' in place of the set of prefixes.
+      </t>
+      </section>
+      </section>
+    
+      <section title="Problems Solved by PrefixList" anchor="problems">
+      <t>
+        Given that a VPP exists for an asID, if a prefix route is announced whose origin AS matches the asID but the prefix
+        is not listed in the VPP, then the route is considered Invalid per PrefixList verification.
+        The network operator may consider such a route ineligible <xref target="RFC4271"/> for route selection,
+        regardless of the route's RPKI Route Origin Validation (ROV) status <xref target="RFC6811"/>.
+        Similarly, the operator may consider an ROV Invalid route to be ineligible for route selection,
+        regardless of the route's PrefixList verification status.
+        If the above stated policy is implemented, PrefixList verification solves the additional routing security problems listed below while ROV detects accidental prefix hijacks.
+        More details concerning the procedures for PrefixList verification will be provided in a separate draft.
+      </t>
+      <ol>
+        <li>
+        <strong>AS Abuse While Hijacking an ROV-Unknown Prefix:</strong>
+        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A
+        as the origin AS and hijacks a third-party prefix not covered by a ROA.
+        </li>
+        <!--
+        The route will be ROV-Unknown and PrefixList Invalid and hence
+        considered ineligible by an RP (see #6 in <xref target="state-space"/>).
+        Thus, AS A protects itself from this form of AS abuse.
+        -->
+        <li>
+        <strong>AS Abuse Together with a Bogus ROA:</strong>
+        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A
+        as the origin AS and announces a prefix for which AS X has an RPKI certificate
+        and a bogus ROA showing AS A as the origin.
+        <!--
+        The route will be ROV-Valid due to the bogus ROA but PrefixList Invalid
+        and hence considered ineligible by an RP (see #3 in <xref target="state-space"/>).
+        Thus, AS A protects itself from this second form of AS abuse as well.
+        -->
+        </li>
+        <li>
+        <strong>AS Accidentally Strips AS_PATH and Mis-Originates Prefixes:</strong>
+        An AS learns a route from an eBGP neighbor and announces the prefix to
+        another eBGP neighbor as if it is being originated by it (i.e., strips the received
+        AS_PATH and re-originates the prefix). This can be called re-origination or mis-origination
+        (also see Type 5 route leak in <xref target="RFC7908"/>).
+        This attack has been seen to happen in practice due to malfunctioning route optimizers.
+        It is mitigated at neighboring ASes if the AS in consideration has registered a PrefixList.
+        <!--  
+        If the affected prefixes have ROA coverage, then ROV at a subsequent AS would detect this anomaly.
+        However, if the affected prefixes do not have ROA coverage, then these prefixes
+        will be ROV-Unknown and PrefixList Invalid and considered Invalid by an RP
+        (per #6 in <xref target="state-space"/>) provided that the leaking AS has registered a PrefixList.
+        Thus, a leaking AS protects itself in the sense that when the leaks (mis-originations) reach
+        a neighbor AS that is doing PrefixList based verification, they will be detected and blocked
+        from further propagation.
+        -->
+        </li>
+        <li>
+        <strong>Attack Surface Reduction:</strong>
+        Often a prefix owner includes more prefixes and/or more more-specific prefixes (using maxLength or otherwise)
+        in their ROA but has no plans to announce some or many of them.
+        Due to this, they tend to create a larger attack surface for forged-origin prefix and/or subprefix hijacks.
+        However, they would notify the operator of the AS serving them for origination purposes
+        about the prefixes they do intend to announce, and the AS operator would include
+        only those prefixes in the AS's PrefixList.
+        This helps to reduce the attack surface for the forged-origin hijacks.
+        </li>
+        <li>
+        <strong>AS can declare itself "Not Originating Prefixes in the Internet":</strong>
+        PrefixList can be created with an empty list in it. In doing this, the AS is asserting that it is not originating prefixes in the Internet.
+        Any route showing this AS as the origin AS is Invalid per PrefixList verification.
+        </li>
+      </ol>
+      </section>
+      <section anchor="operations">
       <name>Operational Considerations</name>
       <t>
-        Multiple valid Signed Prefix List objects which contain the same asID could exist.
-        In such cases the union of address prefix members forms the complete set of members.
         It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single Signed Prefix List for a given asID.
       </t>
       <t>
         If an AS holder publishes a Signed Prefix List, then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Signed Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
       </t>
       <t>
-        The construction of an 'allowlist' for a given EBGP session using Signed Prefix List(s) compliments both best current practises <xref target="RFC7454"/> and the practise of rejecting RPKI-ROV-invalid BGP route announcements <xref target="RFC6811"/>.
-        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement.
+        The construction of an 'allowlist' for a given EBGP session using Signed Prefix List(s) compliments both best current practices <xref target="RFC7454"/> and the practice of rejecting RPKI-ROV-invalid BGP route announcements <xref target="RFC6811"/>.
+        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "Invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement. Here the term "reject the route" is used in the sense of "consider the route ineligible for path selection" <xref target="RFC4271"/>. 
       </t>
 
       <section title="EE Certificates">
@@ -391,6 +491,7 @@
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2622.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.3779.xml"/>
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4271.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.5652.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6481.xml"/>
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6487.xml"/>
@@ -407,6 +508,7 @@
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6268.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7454.xml"/>
+       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7908.xml"/>
       </references>
     </references>
 
