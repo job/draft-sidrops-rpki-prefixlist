@@ -53,7 +53,7 @@
         <email>gih@apnic.net</email>
       </address>
     </author>
-<!--
+    
     <author fullname="Kotikalapudi Sriram" initials="K." surname="Sriram">
       <organization abbrev="USA NIST" showOnFrontPage="true">USA National Institute of Standards and Technology</organization>
       <address>
@@ -67,7 +67,6 @@
         <email>ksriram@nist.gov</email>
       </address>
     </author>
--->
 
     <date />
 
@@ -190,7 +189,7 @@
       <t>
         The IP address prefixes listed in a Signed Prefix List object is an enumeration of prefixes that may be announced as originating from the AS identified by the asID if the object can be validated by the RPKI (<xref target="validation"/>).
         The object does not implicitly permit a more-specific prefix subsumed by a listed IP address prefix to be originated by this AS.
-        For any such more-specific prefix to be permitted by the Signed Prefix List object, it must be explicitly listed in list of IP address prefixes.
+        For any such more-specific prefix to be permitted by the Signed Prefix List object, it must be explicitly listed in the list of IP address prefixes.
       </t>
     </section>
 
@@ -231,20 +230,16 @@
     
       <section title="Problems Solved by PrefixList" anchor="problems">
       <t>
-        Given that a VSP exists for an asID, if a prefix route is announced whose origin AS matches the asID but the prefix
-        is not listed in the VSP, then the route is considered Invalid per PrefixList verification.
-        The network operator may consider such a route ineligible <xref target="RFC4271"/> for route selection,
-        regardless of the route's RPKI Route Origin Validation (ROV) status <xref target="RFC6811"/>.
-        Similarly, the operator may consider an ROV Invalid route to be ineligible for route selection,
-        regardless of the route's PrefixList verification status.
+        Given that a VSP exists for an asID, if a prefix route is announced whose origin AS matches the asID but the prefix is not listed in the VSP, then the route is considered Invalid per PrefixList verification.
+        The network operator may consider such a route ineligible <xref target="RFC4271"/> for route selection, regardless of the route's RPKI Route Origin Validation (ROV) status <xref target="RFC6811"/>.
+        Similarly, the operator may consider an ROV Invalid route ineligible for route selection, regardless of the route's PrefixList verification status.
         If the above stated policy is implemented, PrefixList verification solves the additional routing security problems listed below while ROV detects accidental prefix hijacks.
         More details concerning the procedures for PrefixList verification will be provided in a separate draft.
       </t>
       <ol>
         <li>
         <strong>AS Abuse While Hijacking an ROV-Unknown Prefix:</strong>
-        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A
-        as the origin AS and hijacks a third-party prefix not covered by a ROA.
+        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A as the origin AS and hijacks a third-party prefix not covered by a ROA.
         </li>
         <!--
         The route will be ROV-Unknown and PrefixList Invalid and hence
@@ -253,9 +248,7 @@
         -->
         <li>
         <strong>AS Abuse Together with a Bogus ROA:</strong>
-        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A
-        as the origin AS and announces a prefix for which AS X has an RPKI certificate
-        and a bogus ROA showing AS A as the origin.
+        If AS A creates a PrefixList, it is protected in case an offending AS X inserts AS A as the origin AS and announces a prefix for which AS X has an RPKI certificate and a bogus ROA showing AS A as the origin.
         <!--
         The route will be ROV-Valid due to the bogus ROA but PrefixList Invalid
         and hence considered ineligible by an RP (see #3 in <xref target="state-space"/>).
@@ -264,10 +257,8 @@
         </li>
         <li>
         <strong>AS Accidentally Strips AS_PATH and Mis-Originates Prefixes:</strong>
-        An AS learns a route from an eBGP neighbor and announces the prefix to
-        another eBGP neighbor as if it is being originated by it (i.e., strips the received
-        AS_PATH and re-originates the prefix). This can be called re-origination or mis-origination
-        (also see Type 5 route leak in <xref target="RFC7908"/>).
+        An AS learns a route from an eBGP neighbor and announces the prefix to another eBGP neighbor as if it is being originated by it (i.e., strips the received AS_PATH and re-originates the prefix).
+        This can be called re-origination or mis-origination (also see Type 5 route leak in <xref target="RFC7908"/>).
         This attack has been seen to happen in practice due to malfunctioning route optimizers.
         It is mitigated at neighboring ASes if the AS in consideration has registered a PrefixList.
         <!--  
@@ -282,12 +273,9 @@
         </li>
         <li>
         <strong>Attack Surface Reduction:</strong>
-        Often a prefix owner includes more prefixes and/or more more-specific prefixes (using maxLength or otherwise)
-        in their ROA but has no plans to announce some or many of them.
+        Often a prefix owner includes more prefixes and/or more more-specific prefixes (using maxLength or otherwise) in their ROA but has no plans to announce some or many of them.
         Due to this, they tend to create a larger attack surface for forged-origin prefix and/or subprefix hijacks.
-        However, they would notify the operator of the AS serving them for origination purposes
-        about the prefixes they do intend to announce, and the AS operator would include
-        only those prefixes in the AS's PrefixList.
+        However, they would notify the operator of the AS serving them for origination purposes about the prefixes they do intend to announce, and the AS operator would include only those prefixes in the AS's PrefixList.
         This helps to reduce the attack surface for the forged-origin hijacks.
         </li>
         <li>
@@ -307,7 +295,7 @@
       </t>
       <t>
         The construction of an 'allowlist' for a given EBGP session using Signed Prefix List(s) compliments both best current practices <xref target="RFC7454"/> and the practice of rejecting RPKI-ROV-invalid BGP route announcements <xref target="RFC6811"/>.
-        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "Invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement. Here the term "reject the route" is used in the sense of "consider the route ineligible for path selection" <xref target="RFC4271"/>. 
+        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "Invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement. Here the term "reject the route" is used in the sense of "consider the route ineligible for path selection" <xref target="RFC4271"/>.
       </t>
 
       <section title="EE Certificates">
