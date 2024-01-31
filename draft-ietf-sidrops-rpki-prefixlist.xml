@@ -217,22 +217,22 @@
           The IP Address Delegation Extension <xref target="RFC3779"/> is not used in Signed Prefix List, and <bcp14>MUST NOT</bcp14> be present in the EE certificate.
         </li>
       </ol>
-      <section title="Validated PrefixList Payload" anchor="VPP">
+      <section title="Validated Signed-PrefixList Payload" anchor="VSP">
       <t>
         Normally there would be a single valid Signed Prefix List object for a given asID (see <xref target="operations"/>).
         However, multiple valid Signed Prefix List objects which contain the same asID could exist.
         In such cases, the union of the resulting address prefix members forms the complete set of members.
-        The complete set (resulting from a single or multiple PrefixLists) is locally stored by a relying party, and such an object is called the Validated PrefixList Payload (VPP) for the asID in consideration.
-        (Note: The VPP is akin to the Validated ROA Payload (VRP) for Route Origin Authorization (ROA) <xref target="RFC6811"/>.)
-        For a given asID, if there is only a valid Signed Prefix List object with zero prefixes listed, then the VPP for the asID MUST show 'Empty' in place of the set of prefixes.
+        The complete set (resulting from a single or multiple PrefixLists) is locally stored by a relying party, and such an object is called the Validated Signed-PrefixList Payload (VSP) for the asID in consideration.
+        (Note: The VSP is akin to the Validated ROA Payload (VRP) for Route Origin Authorization (ROA) <xref target="RFC6811"/>.)
+        For a given asID, if there is only a valid Signed Prefix List object with zero prefixes listed, then the VSP for the asID MUST show 'Empty' in place of the set of prefixes.
       </t>
       </section>
       </section>
     
       <section title="Problems Solved by PrefixList" anchor="problems">
       <t>
-        Given that a VPP exists for an asID, if a prefix route is announced whose origin AS matches the asID but the prefix
-        is not listed in the VPP, then the route is considered Invalid per PrefixList verification.
+        Given that a VSP exists for an asID, if a prefix route is announced whose origin AS matches the asID but the prefix
+        is not listed in the VSP, then the route is considered Invalid per PrefixList verification.
         The network operator may consider such a route ineligible <xref target="RFC4271"/> for route selection,
         regardless of the route's RPKI Route Origin Validation (ROV) status <xref target="RFC6811"/>.
         Similarly, the operator may consider an ROV Invalid route to be ineligible for route selection,
