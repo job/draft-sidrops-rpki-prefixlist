@@ -82,7 +82,7 @@
       </t>
       <t>
         RPKI Signed Prefix Lists allow other RPKI-validating remote routing entities to audit the collection of announcements that have the subject ASN as the originating AS.
-        Any prefixes originated by this AS not contained in a validated Signed Prefix List SHOULD be regarded as ineligible, but ultimately their consequent handling by the local routing entity that performed the audit function is a matter of local policy.
+        Any prefixes originated by this AS not contained in a validated Signed Prefix List <bcp14>SHOULD</bcp14> be regarded as ineligible, but ultimately their consequent handling by the local routing entity that performed the audit function is a matter of local policy.
       </t>
       <t>
         The intent of this object is to offer a RPKI-based successor to the <xref target="RFC2622"/> 'route-set' class objects used in Internet Routing Registries (IRRs).
@@ -118,7 +118,7 @@
         An Signed Prefix List is formally defined as follows:
       </t>
 
-      <sourcecode type="asn.1" src="RpkiSignedPrefixList-2024.asn"/>
+      <sourcecode anchor="ASN.1" type="asn.1" src="RpkiSignedPrefixList-2024.asn"/>
 
       <section>
         <name>Version</name>
@@ -135,7 +135,7 @@
       </section>
 
       <section>
-        <name>prefixes</name>
+        <name>prefixBlocks</name>
         <t>
           This field contains a SEQUENCE of AddressFamilyAddressPrefixes.
           The AddressFamilyAddressPrefixes elements <bcp14>MUST</bcp14> be ordered in ascending order by numeric value of the addressFamily field.
@@ -155,7 +155,6 @@
             <name>addressPrefixes</name>
             <t>
               This field contains a SEQUENCE of parameterized AddressPrefix instances.
-              The canonicalization procedure specified in <xref target="I-D.ietf-sidrops-rfc6482bis" section="4.3.3"/> <bcp14>MUST</bcp14> be applied.
             </t>
           </section>
           <section>
@@ -165,7 +164,47 @@
               The type is a BIT STRING, see <xref target="RFC3779" section="2.2.3.8"/> for more information on encoding IP prefixes.
             </t>
           </section>
+        </section>
 
+        <section>
+            <name>Canonical form for prefixBlocks</name>
+            <t>
+              As the data structure described by the SignedPrefixList <xref target="ASN.1"/> module allows for many different ways to represent the same set of IP address prefix information, a canonical form is defined such that every set of address prefixes has a unique representation.
+              In order to produce and verify this canonical form, the process described in this section <bcp14>MUST</bcp14> be used to ensure information elements are unique with respect to one another and sorted in ascending order.
+              This canonicalization procedure builds upon the canonicalization procedure specified in section 2.2.3.6 of <xref target="RFC3779"/> and <xref target="I-D.ietf-sidrops-rfc6482bis" section="4.3.3"/>.
+            </t>
+            <t>
+              In order to semantically compare, sort, and deduplicate the contents of the prefixBlocks field, each AddressPrefix element is mapped to an abstract data element composed of three integer values:
+            </t>
+            <dl>
+              <dt>afi</dt>  <dd>The AFI value appearing in the addressFamily field of the containing addressPrefixes as an integer.</dd>
+              <dt>addr</dt> <dd>The first IP address of the IP prefix appearing in the AddressPrefix field, as a 32-bit (IPv4) or 128-bit (IPv6) integer value.</dd>
+              <dt>plen</dt> <dd>The prefix length of the IP prefix appearing in the AddressPrefix address field as an integer value.</dd>
+            </dl>
+            <t>
+              Thus, the equality or relative order of two AddressPrefix elements can be tested by comparing their abstract representations.
+            </t>
+            <section>
+              <name>Comparator</name>
+              <t>
+                The set of prefixBlocks is totally ordered.
+                The order of two prefixBlocks is determined by the first non-equal comparison in the following list.
+              </t>
+              <ol>
+                <li>
+                  Data elements with a lower afi value precede data elements with a higher afi value.
+                </li>
+                <li>
+                  Data elements with a lower addr value precede data elements with a higher addr value.
+                </li>
+                <li>
+                  Data elements with a lower plen value precede data elements with a higher plen value.
+                </li>
+              </ol>
+              <t>
+                Data elements for which all three values compare equal are duplicates of one another.
+              </t>
+            </section>
         </section>
       </section>
     </section>
@@ -203,11 +242,11 @@
         It is highly <bcp14>RECOMMENDED</bcp14> that a compliant CA maintains a single Signed Prefix List for a given asID.
       </t>
       <t>
-        If an AS holder publishes a Signed Prefix List, then relying parties SHOULD assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Signed Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
+        If an AS holder publishes a Signed Prefix List, then relying parties <bcp14>SHOULD</bcp14> assume that the list is complete for that originating AS, and the presence of any route with the same AS as the originating AS and an address prefix that is not included in the Signed Prefix List implies that the route has been propagated within the routing system without the permission of the originating AS.
       </t>
       <t>
         The construction of an 'allowlist' for a given EBGP session using Signed Prefix List(s) compliments both best current practises <xref target="RFC7454"/> and the practise of rejecting RPKI-ROV-invalid BGP route announcements <xref target="RFC6811"/>.
-        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "invalid" from a Route Origin Validation perspective, it is RECOMMENDED to reject the route announcement.
+        In other words, if a given BGP route is covered by a Signed Prefix List, but also is "invalid" from a Route Origin Validation perspective, it is <bcp14>RECOMMENDED</bcp14> to reject the route announcement.
       </t>
 
       <section title="EE Certificates">
@@ -407,6 +446,15 @@
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6268.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7454.xml"/>
+
+        <reference anchor="rpki-client" target="https://marc.info/?l=openbsd-tech&amp;m=170842756609188&amp;w=2">
+          <front>
+            <title>rpki-client</title>
+            <author fullname="Job Snijders"/>
+            <date month="February" year="2024" />
+          </front>
+        </reference>
+
       </references>
     </references>
 
@@ -487,6 +535,9 @@ EOF
       <ul>
         <li>
           Example .spl files were created by Job Snijders.
+        </li>
+        <li>
+          A validator implementation <xref target="rpki-client"/>, written in C was provided by Job Snijders from Fastly.
         </li>
       </ul>
     </section>
