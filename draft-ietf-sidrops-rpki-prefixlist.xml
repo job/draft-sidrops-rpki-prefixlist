@@ -216,13 +216,12 @@
           The IP Address Delegation Extension <xref target="RFC3779"/> is not used in Signed Prefix List, and <bcp14>MUST NOT</bcp14> be present in the EE certificate.
         </li>
       </ol>
-      <section title="Validated Signed-PrefixList Payload" anchor="VSP">
+      <section title="Validated Signed PrefixList Payload" anchor="VSP">
       <t>
         Normally there would be a single valid Signed Prefix List object for a given asID (see <xref target="operations"/>).
         However, multiple valid Signed Prefix List objects which contain the same asID could exist.
         In such cases, the union of the resulting address prefix members forms the complete set of members.
-        The complete set (resulting from a single or multiple PrefixLists) is locally stored by a relying party, and such an object is called the Validated Signed-PrefixList Payload (VSP) for the asID in consideration.
-        (Note: The VSP is akin to the Validated ROA Payload (VRP) for Route Origin Authorization (ROA) <xref target="RFC6811"/>.)
+        The complete set (resulting from a single or multiple PrefixLists) is locally stored by a relying party, and such an object is called the Validated SignedPrefixList Payload (VSP) for the asID in consideration.
         For a given asID, if there is only a valid Signed Prefix List object with zero prefixes listed, then the VSP for the asID MUST show 'Empty' in place of the set of prefixes.
       </t>
       </section>
