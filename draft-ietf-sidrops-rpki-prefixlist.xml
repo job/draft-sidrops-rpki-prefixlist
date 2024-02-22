@@ -310,7 +310,7 @@
       <section>
         <name>RPKI Signed Objects</name>
         <t>
-          IANA is requested to register two OIDs in the "RPKI Signed Objects" registry <xref target="RFC6488"/> as follows:
+          IANA is requested to register the following OID in the "RPKI Signed Objects" registry <xref target="RFC6488"/>:
         </t>
 
         <table anchor="rpki-signed-prefixlist" align="center">
