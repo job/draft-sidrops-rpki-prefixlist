@@ -447,9 +447,12 @@
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7454.xml"/>
 
-        <reference anchor="rpki-client" target="https://marc.info/?l=openbsd-tech&amp;m=170842756609188&amp;w=2">
+        <reference anchor="rpki-client" target="https://www.rpki-client.org/">
           <front>
             <title>rpki-client</title>
+            <author fullname="Claudio Jeker"/>
+            <author fullname="Kristaps Dzonsons"/>
+            <author fullname="Theo Buehler"/>
             <author fullname="Job Snijders"/>
             <date month="February" year="2024" />
           </front>
