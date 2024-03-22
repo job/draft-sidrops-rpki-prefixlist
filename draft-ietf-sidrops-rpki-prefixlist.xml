@@ -284,7 +284,7 @@
         Such an authority is separately conveyed in the RPKI as a ROA.
       </t>
       <t>
-        While a one-time-use EE certificate are only be used to generate and sign a single Signed Prefix List object, CAs are not technically restricted from generating and signing multiple different Signed Prefix List objects with a single key pair.
+        While one-time-use EE certificates and their associated key pairs are supposed to be used in an ephemeral manner; CAs are not technically restricted from generating and signing multiple different objects with the same key pair, or using the same EE certificate for different objects.
         Any RPKI objects, including Signed Prefix List objects, that share the same EE certificate cannot be revoked individually.
       </t>
     </section>
