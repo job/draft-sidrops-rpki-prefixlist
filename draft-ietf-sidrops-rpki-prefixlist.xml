@@ -457,7 +457,6 @@
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6268.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"/>
        <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7454.xml"/>
-       <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7908.xml"/>
 
         <reference anchor="rpki-client" target="https://www.rpki-client.org/">
           <front>
@@ -535,7 +534,6 @@ EOF
 
     </section>
 
-<!--
     <section removeInRFC="true">
       <name>Implementation status</name>
       <t>
@@ -560,7 +558,6 @@ EOF
         </li>
       </ul>
     </section>
--->
 
   </back>
 
