@@ -29,7 +29,7 @@
     </title>
 
     <author fullname="Job Snijders" initials="J." surname="Snijders">
-      <organization>Fastly</organization>
+      <organization abbrev="BSD">BSD Software Development</organization>
       <address>
         <postal>
           <street/>
@@ -37,7 +37,8 @@
           <city>Amsterdam</city>
           <country>Netherlands</country>
         </postal>
-        <email>job@fastly.com</email>
+        <email>job@bsd.nl</email>
+        <uri>https://www.bsd.nl/</uri>
       </address>
     </author>
 
